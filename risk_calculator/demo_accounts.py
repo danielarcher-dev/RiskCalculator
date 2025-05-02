@@ -31,6 +31,10 @@ for pos in acct.SecuritiesAccount.Positions:
 
 # print(acct.Transactions)
 
+print("My transactions are:")
+for tran in acct.Transactions.Transactions:
+    print(tran.activityId)
+
 
 
 

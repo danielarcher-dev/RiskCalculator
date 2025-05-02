@@ -28,10 +28,12 @@ class AccountsLauncher():
             self.hash = self.get_account_hash(self.target_account)
             # this is a potential failure point. there are other responses than securitiesAccount, which I haven't implemented
             self.SecuritiesAccount = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
+            self.Transactions = self.get_account_transactions()
             self.__save__()
 
         # these attributes should be the same whether the data is live from client or from passed json
-        self.Transactions = self.get_account_transactions()
+        # transactions is a live query
+        #
 
 
     def parse_args(self):
@@ -40,7 +42,8 @@ class AccountsLauncher():
     
     def read_config(self):
         self.config = conf.get_config()
-        self.output_file = self.config['AppConfig']['output_file'].replace('<date>',str(datetime.date.today()))
+        self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
+        self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
         
     def get_client(self):
         self.client = conf.get_client()
@@ -85,8 +88,12 @@ class AccountsLauncher():
 
     def __save__(self):
         # save account data to time_dated file
-        with open(self.output_file, 'w') as json_file:
+        with open(self.securities_account_file, 'w') as json_file:
             json.dump(self.SecuritiesAccount.securitiesAccount, json_file)
+        
+        # save transactions data to time_dated file
+        with open(self.transactions_file, 'w') as json_file:
+            json.dump(self.Transactions, json_file)
 
     def run(self):
         print("hello")

@@ -18,7 +18,8 @@ class AccountsLauncher():
             self.read_config()
             with open (json_file) as json_file:
                 data = json.load(json_file)
-            self.Account = sa.SecuritiesAccount(data)
+            self.SecuritiesAccount = sa.SecuritiesAccount(data)
+
         else:
             self.read_config()
             self.get_client()
@@ -26,9 +27,11 @@ class AccountsLauncher():
             self.account_numbers = self.get_account_numbers()
             self.hash = self.get_account_hash(self.target_account)
             # this is a potential failure point. there are other responses than securitiesAccount, which I haven't implemented
-            self.Account = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
-            self.Positions = self.Account.rawPositions
-            self.Transactions = self.get_account_transactions()
+            self.SecuritiesAccount = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
+            self.__save__()
+
+        # these attributes should be the same whether the data is live from client or from passed json
+        self.Transactions = self.get_account_transactions()
 
 
     def parse_args(self):
@@ -78,6 +81,12 @@ class AccountsLauncher():
         resp = self.client.get_transactions(self.hash)
         assert resp.status_code == httpx.codes.OK
         return resp.json()
+
+
+    def __save__(self):
+        # save account data to time_dated file
+        with open(self.output_file, 'w') as json_file:
+            json.dump(self.SecuritiesAccount.securitiesAccount, json_file)
 
     def run(self):
         print("hello")

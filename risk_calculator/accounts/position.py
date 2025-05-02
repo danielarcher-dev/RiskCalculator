@@ -10,6 +10,7 @@ class Position():
         self.settledLongQuantity = item['settledLongQuantity']
         self.settledShortQuantity = item['settledShortQuantity']
         self.instrument = instrument.Instrument(item['instrument'])
+        self.symbol = self.instrument.symbol
         self.marketValue = item['marketValue']
         self.maintenanceRequirement = item['maintenanceRequirement']
         self.currentDayCost = item['currentDayCost']

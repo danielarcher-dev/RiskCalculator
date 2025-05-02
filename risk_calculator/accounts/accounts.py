@@ -7,24 +7,37 @@ import pandas as pd
 from io import StringIO
 import httpx
 import accounts.securities_account as sa
+import datetime
 
 class AccountsLauncher():
-    def __init__(self):
+    def __init__(self, json_file=None):
         # self.parse_args()
-        self.read_config()
-        self.get_client()
-        self.target_account = self.config['RuntimeSecrets']['target_account']
-        self.account_numbers = self.get_account_numbers()
-        self.hash = self.get_account_hash(self.target_account)
-        self.Account = sa.SecuritiesAccount(self.get_account_details(self.hash))
         
-    
+        if(json_file != None):
+            # we can instantiate this by passing a dated file, but it should really be implemented at Securities account level
+            self.read_config()
+            with open (json_file) as json_file:
+                data = json.load(json_file)
+            self.Account = sa.SecuritiesAccount(data)
+        else:
+            self.read_config()
+            self.get_client()
+            self.target_account = self.config['RuntimeSecrets']['target_account']
+            self.account_numbers = self.get_account_numbers()
+            self.hash = self.get_account_hash(self.target_account)
+            # this is a potential failure point. there are other responses than securitiesAccount, which I haven't implemented
+            self.Account = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
+            self.Positions = self.Account.rawPositions
+            self.Transactions = self.get_account_transactions()
+
+
     def parse_args(self):
         #todo:
         print("if any arguments, implement this")
     
     def read_config(self):
         self.config = conf.get_config()
+        self.output_file = self.config['AppConfig']['output_file'].replace('<date>',str(datetime.date.today()))
         
     def get_client(self):
         self.client = conf.get_client()
@@ -61,6 +74,10 @@ class AccountsLauncher():
         assert resp.status_code == httpx.codes.OK
         return resp.json()
 
+    def get_account_transactions(self):
+        resp = self.client.get_transactions(self.hash)
+        assert resp.status_code == httpx.codes.OK
+        return resp.json()
 
     def run(self):
         print("hello")

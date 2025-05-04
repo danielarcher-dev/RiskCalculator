@@ -7,21 +7,14 @@ import pandas as pd
 from io import StringIO
 import httpx
 import accounts.securities_account as sa
-import accounts.transaction_data as ta
+import accounts.transactions.transaction_data as ta
 import datetime
 
 class AccountsLauncher():
-    def __init__(self, json_file=None):
+    def __init__(self, securities_account_file=None, transactions_file=None):
         # self.parse_args()
         
-        if(json_file != None):
-            # we can instantiate this by passing a dated file, but it should really be implemented at Securities account level
-            self.read_config()
-            with open (json_file) as json_file:
-                data = json.load(json_file)
-            self.SecuritiesAccount = sa.SecuritiesAccount(data)
-
-        else:
+        if (securities_account_file == None) and (transactions_file == None):
             self.read_config()
             self.get_client()
             self.target_account = self.config['RuntimeSecrets']['target_account']
@@ -31,6 +24,20 @@ class AccountsLauncher():
             self.SecuritiesAccount = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
             self.Transactions = ta.TransactionData(self.get_account_transactions())
             self.__save__()
+
+        if(securities_account_file != None):
+            # we can instantiate this by passing a dated file, but it should really be implemented at Securities account level
+            self.read_config()
+            with open (securities_account_file) as securities_account_file:
+                data = json.load(securities_account_file)
+            self.SecuritiesAccount = sa.SecuritiesAccount(data)
+
+        if (transactions_file != None):
+            with open (transactions_file) as transactions_file:
+                data = json.load(transactions_file)
+            self.Transactions = ta.TransactionData(data)
+
+        # else:
 
         # these attributes should be the same whether the data is live from client or from passed json
         # transactions is a live query

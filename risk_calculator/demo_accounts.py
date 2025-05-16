@@ -7,6 +7,8 @@ import time
 import schwab
 import cufflinks as cf
 import pandas as pd
+import numpy as np
+# setattr(plotly.offline, "__PLOTLY_OFFLINE_INITIALIZED", True)
 
 def main():
     #these are for live:
@@ -43,16 +45,33 @@ def main():
     #     print(price)
     # print("Cufflinks Version: {}".format(cf.__version__))
 
-    cf.set_config_file(theme='pearl', sharing='private', offline=True)
+    # cf.set_config_file(sharing='private', offline=True)
 
+    # df=pd.DataFrame(np.random.randn(100,5),index=pd.date_range('1/1/15',periods=100),
+    #             columns=['IBM','MSFT','GOOG','VERZ','APPL'])
+    # df=df.cumsum()
+    # df.iplot(filename='Tutorial 1', color='rgba(255, 153, 51)')
+    cf.go_offline()
+    # print(cf.get_config_file())
+    # cf.datagen.box(20, color='rgb(255, 153, 51)').iplot(kind='box',legend=False)
+
+# def msft_dataframe(price_history):
     df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
+    df['datetime'] = df['datetime'].apply(date_transform)
+    df = df.set_index('datetime')
+    dt_range = pd.date_range(start="2025-05-01", end="2025-05-16")
 
-    # df['datetime'] = datetime.DateTiem['datetime']
+    
+    msft_df = df[df.index.isin(dt_range)]
+    msft_df.iplot()
+    # msft_df.iplot(kind="candle",
+    #               keys=["open", "high", "low", "close"],
+    #               rangeslider=True)
 
-    print(df)
-    # msft_df = pd.read_csv(price_history['candles'])
-    # print(msft_df)
 
+def date_transform(datetime_data):
+     timestamp = datetime_data/1000
+     return datetime.datetime.fromtimestamp(timestamp)
 
 def market_hours():
     # resp = launcher.client.get_transactions(launcher.hash)

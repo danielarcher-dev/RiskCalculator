@@ -5,7 +5,8 @@ import accounts.accounts as accounts
 import datetime
 import time
 import schwab
-import cufflinks
+import cufflinks as cf
+import pandas as pd
 
 def main():
     #these are for live:
@@ -23,18 +24,35 @@ def main():
     securities_account = acct.SecuritiesAccount
     transaction = acct.Transactions
 
-
+    
 
     # high level reporting
     print_welcome(securities_account)
     # acct.client.get
-    r2 = acct.client.get_instruments('MSFT',acct.client.Instrument.Projection.FUNDAMENTAL)
-    response = json.dumps(r2.json())
-    print(response)
+    # r2 = acct.client.get_instruments('MSFT',acct.client.Instrument.Projection.FUNDAMENTAL)
+    # response = json.dumps(r2.json())
+    # print(response)
 
-    price_history = client.get_price_history_every_minute('MSFT')
+    price_history = client.get_price_history_every_minute('MSFT').json()
 
-    print(json.dumps(price_history.json()))
+    # print(json.dumps(price_history.json()))
+
+    # print(price_history)
+    # for price in price_history['candles']:
+    #     #  print(price['open'])
+    #     print(price)
+    # print("Cufflinks Version: {}".format(cf.__version__))
+
+    cf.set_config_file(theme='pearl', sharing='private', offline=True)
+
+    df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
+
+    # df['datetime'] = datetime.DateTiem['datetime']
+
+    print(df)
+    # msft_df = pd.read_csv(price_history['candles'])
+    # print(msft_df)
+
 
 def market_hours():
     # resp = launcher.client.get_transactions(launcher.hash)

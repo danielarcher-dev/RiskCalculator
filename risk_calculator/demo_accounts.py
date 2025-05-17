@@ -5,10 +5,12 @@ import accounts.accounts as accounts
 import datetime
 import time
 import schwab
-import cufflinks as cf
+
 import pandas as pd
 import numpy as np
-# setattr(plotly.offline, "__PLOTLY_OFFLINE_INITIALIZED", True)
+
+import mplfinance as fplt
+
 
 def main():
     #these are for live:
@@ -30,43 +32,41 @@ def main():
 
     # high level reporting
     print_welcome(securities_account)
-    # acct.client.get
-    # r2 = acct.client.get_instruments('MSFT',acct.client.Instrument.Projection.FUNDAMENTAL)
-    # response = json.dumps(r2.json())
-    # print(response)
 
-    price_history = client.get_price_history_every_minute('MSFT').json()
+    earliest_date = datetime.datetime.now() - datetime.timedelta(days=1)
+            
 
-    # print(json.dumps(price_history.json()))
+    # price_history = client.get_price_history_every_minute('MSFT', start_datetime=earliest_date).json()
+    price_history = client.get_price_history_every_fifteen_minutes('MSFT', start_datetime=earliest_date).json()
 
-    # print(price_history)
-    # for price in price_history['candles']:
-    #     #  print(price['open'])
-    #     print(price)
-    # print("Cufflinks Version: {}".format(cf.__version__))
+    # daily 
 
-    # cf.set_config_file(sharing='private', offline=True)
-
-    # df=pd.DataFrame(np.random.randn(100,5),index=pd.date_range('1/1/15',periods=100),
-    #             columns=['IBM','MSFT','GOOG','VERZ','APPL'])
-    # df=df.cumsum()
-    # df.iplot(filename='Tutorial 1', color='rgba(255, 153, 51)')
-    cf.go_offline()
-    # print(cf.get_config_file())
-    # cf.datagen.box(20, color='rgb(255, 153, 51)').iplot(kind='box',legend=False)
-
-# def msft_dataframe(price_history):
     df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
     df['datetime'] = df['datetime'].apply(date_transform)
     df = df.set_index('datetime')
-    dt_range = pd.date_range(start="2025-05-01", end="2025-05-16")
-
+    # dt_range = pd.date_range(start="2025-05-01", end="2025-05-16")
+    # df = df[df.index > (dt_range)]
+    # df = df[df.index.]
     
-    msft_df = df[df.index.isin(dt_range)]
-    msft_df.iplot()
-    # msft_df.iplot(kind="candle",
-    #               keys=["open", "high", "low", "close"],
-    #               rangeslider=True)
+
+    #this example does not work
+                # candlestick = go.Candlestick(x=df.index,
+                #                              open=df['open'],
+                #                              high=df['high'],
+                #                              low=df['low'],
+                #                              close=df['close'])
+                
+                # fig = go.Figure(data=[candlestick])
+                # fig.show()
+
+    fplt.plot(
+            df,
+            type='candle',
+            style='charles',
+            title='MSFT, May - 2025',
+            ylabel='Price ($)'
+        )
+
 
 
 def date_transform(datetime_data):
@@ -101,7 +101,7 @@ def print_options(securities_account):
                 line = str.format("{0},{1},{2}", pos.instrument.description, pos.Quantity, pos.marketValue)
                 print(line)
 
-def print_transactions(transaction):
+def print_transactions(transaction, acct):
         print("My transactions are:")
         for tran in transaction.Transactions:
             default_transaction_history_lookback = int(acct.config['AppConfig']['default_transaction_history_lookback'])

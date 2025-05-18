@@ -35,8 +35,18 @@ def main():
 
     my_chart = chart.Charts(acct)
 
-    my_chart.print_180_daily('MSFT')
+    # my_chart.print_180_daily('MSFT')
     # chart.print_180_daily('MSFT', client)
+
+
+    watchlist_file = "./data/watchlist.json"
+    # Writing JSON data to a file
+    with open(watchlist_file, "r") as json_file:
+        wlist = json.load(json_file) 
+    print(wlist)
+
+    for stock in wlist['stocks']:
+         my_chart.print_180_daily(stock)
 
 
 

@@ -31,15 +31,14 @@ def main():
     # high level reporting
     print_welcome(securities_account)
 
-    market_hours(acct)
+    acct.market_hours()
 
+    my_chart = chart.Charts(acct)
+
+    my_chart.print_180_daily('MSFT')
     # chart.print_180_daily('MSFT', client)
 
-def market_hours(launcher):
-    resp = launcher.client.get_transactions(launcher.hash)
-    resp = launcher.client.get_market_hours(markets=schwab.client.Client.MarketHours.Market.OPTION)
-    print(resp.json())
-    return None
+
 
 def load_account_file(securities_account_file, transactions_file):
     return accounts.AccountsLauncher(securities_account_file=securities_account_file, transactions_file=transactions_file)

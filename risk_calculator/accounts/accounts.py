@@ -93,6 +93,11 @@ class AccountsLauncher():
         assert resp.status_code == httpx.codes.OK
         return resp.json()
 
+    def market_hours(self):
+        resp = self.client.get_transactions(self.hash)
+        resp = self.client.get_market_hours(markets=client.Client.MarketHours.Market.OPTION)
+        print(resp.json())
+        return None
 
     def __save__(self):
         # save account data to time_dated file

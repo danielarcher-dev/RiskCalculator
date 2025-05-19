@@ -18,7 +18,7 @@
             "type": "debugpy",
             "request": "launch",
             // "program": "${file}",
-            "program": "${workspaceFolder}/demo_accounts.py",
+            "program": "${workspaceFolder}/risk_calculator/demo_accounts.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
         }

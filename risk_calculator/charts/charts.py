@@ -49,34 +49,53 @@ class Charts():
         return df
 
     def my_plot_settings(self, symbol, df):
+        
+        # fplt.plot(
+        # df,
+        # type='candle',
+        # style='charles',
+        # title='{0}, May - 2025'.format(symbol),
+        # ylabel='Price ($)',
+        # figsize=(21,6),
+        # show_nontrading=True,
+        # volume=True,
+        # datetime_format=' %Y-%m-%d',
+        # tight_layout=True,
+        # savefig=dict(fname='{0}/{1}_chart.png'.format(self.path, symbol), dpi=1200)
+        # )
+        
+
+        fig = fplt.figure(figsize=(21, 8), style='charles')
+        ax1 = fig.add_subplot(3, 1, (1, 2))
+        # ax2 = fig.add_subplot(3, 1, 3, sharex=ax1)
+        fig.subplots_adjust(hspace=0)
+        xticks, xticklabels = [], []
+        mth = -1
+        for i, dt in enumerate(df.index):
+            if dt.dayofweek == 0:
+                xticks.append(i)
+                if dt.month != mth:
+                    mth = dt.month
+                    xticklabels.append(datetime.datetime.strftime(dt, '%b %d'))
+                else:
+                    xticklabels.append(datetime.datetime.strftime(dt, '%d'))
+                ax1.set_xticks(xticks)
+                ax1.set_xticklabels(xticklabels)
         fplt.plot(
         df,
         type='candle',
+        ax=ax1,
+        # volume=ax2,
         style='charles',
-        title='{0}, May - 2025'.format(symbol),
+        axtitle='{0}, May - 2025'.format(symbol),
         ylabel='Price ($)',
-        figsize=(21,6),
-        show_nontrading=True,
-        savefig=dict(fname='{0}/{1}_chart.png'.format(self.path, symbol), dpi=1200)
+        # show_nontrading=True,
+        datetime_format=' %Y-%m-%d',
+        xrotation=90,
+        # tight_layout=True,
+        
         )
-
-        # fig = fplt.figure(figsize=(21, 7))  # Wider chart
-        # ax = fig.add_subplot(1, 1, 1)
-
-        # fplt.plot(df,
-        #           type='candle',
-        #           style='charles',
-        #         #   suptitle='{0}, May - 2025'.format(symbol),
-        #           ylabel='Price ($)',
-        #           ax=ax,
-        #           savefig=dict(fname='{0}_chart.png'.format(symbol), dpi=1200))
-        # fig.show()
-
-
-        # fig, ax = fplt.plot(df, type='candle', style='charles', returnfig=True)
-        # fig.update_layout(width=1200, height=600)
-        # fig.savefig('{0}_chart.png'.format(symbol), dpi=300)
-        # fig.show()
+        fig.savefig('{0}/{1}_chart.png'.format(self.path, symbol), dpi=600, bbox_inches="tight")
 
         
 

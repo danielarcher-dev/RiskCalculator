@@ -2046,7 +2046,19 @@ files = [
     {file = "widgetsnbextension-4.0.14.tar.gz", hash = "sha256:a3629b04e3edb893212df862038c7232f62973373869db5084aed739b437b5af"},
 ]
 
+[[package]]
+name = "xlsxwriter"
+version = "3.2.3"
+description = "A Python module for creating Excel XLSX files."
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "XlsxWriter-3.2.3-py3-none-any.whl", hash = "sha256:593f8296e8a91790c6d0378ab08b064f34a642b3feb787cf6738236bd0a4860d"},
+    {file = "xlsxwriter-3.2.3.tar.gz", hash = "sha256:ad6fd41bdcf1b885876b1f6b7087560aecc9ae5a9cc2ba97dcac7ab2e210d3d5"},
+]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "0ea4d1cc1953ee87a196a5457a7497ea39ee2c16a8fea8e8a75d440c58ba3e8a"
+content-hash = "639a3d74fe604832f77a8a1f404d60b42bdfa2a3c9ecd848b9b22b585598122c"

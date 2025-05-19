@@ -22,6 +22,8 @@ class Charts():
 
         self.my_plot_settings(symbol, df)
 
+        return df
+
     def print_180_daily(self, symbol):
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=180)
         price_history = self.client.get_price_history_every_day(symbol, start_datetime=earliest_date).json()
@@ -30,11 +32,17 @@ class Charts():
 
         self.my_plot_settings(symbol, df)
 
+        return df
+
 
     def price_history_to_dataframe(self, price_history):
         df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
         df['datetime'] = df['datetime'].apply(self.date_transform)
         df = df.set_index('datetime')
+        df.index.name = 'Date'
+        df.shape
+        df.head(3)
+        df.tail(3)
         # dt_range = pd.date_range(start="2025-05-01", end="2025-05-16")
         # df = df[df.index > (dt_range)]
         # df = df[df.index.]
@@ -48,6 +56,7 @@ class Charts():
         title='{0}, May - 2025'.format(symbol),
         ylabel='Price ($)',
         figsize=(21,6),
+        show_nontrading=True,
         savefig=dict(fname='{0}/{1}_chart.png'.format(self.path, symbol), dpi=1200)
         )
 

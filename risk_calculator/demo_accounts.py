@@ -3,8 +3,10 @@
 import json
 import accounts.accounts as accounts
 import charts.charts as chart
+import datetime
 import time
 import schwab
+
 
 
 import numpy as np
@@ -33,21 +35,34 @@ def main():
 
     acct.market_hours()
 
+    print_my_watchlist(acct)
+
+
+
+
+def print_my_watchlist(acct):
+    import pandas as pd
+    import xlsxwriter
+    
     my_chart = chart.Charts(acct)
 
-    # my_chart.print_180_daily('MSFT')
-    # chart.print_180_daily('MSFT', client)
-
-
     watchlist_file = "./data/watchlist.json"
-    # Writing JSON data to a file
+    chart_file = "./data/watchlist.xlsx"
+    
     with open(watchlist_file, "r") as json_file:
         wlist = json.load(json_file) 
     print(wlist)
 
-    for stock in wlist['stocks']:
-         my_chart.print_180_daily(stock)
+    writer = pd.ExcelWriter(chart_file, engine="xlsxwriter")
+    # workbook = writer.book
 
+    for stock in wlist['stocks']:
+        df = my_chart.print_180_daily(stock)
+        df.to_excel(writer, sheet_name=stock)
+        worksheet = writer.sheets[stock]
+        worksheet.insert_image("A1", "{0}/{1}_chart.png".format(my_chart.path, stock))
+
+    writer.close()
 
 
 def load_account_file(securities_account_file, transactions_file):

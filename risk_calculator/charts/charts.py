@@ -12,7 +12,7 @@ class Charts():
         self.client = account.client
         self.path = self.account.config['Charting']['charts_path']
         
-
+        
     def print_15_mins(self, symbol):
         # FIXME: there is a bug here, if market is closed when this is run, we will get an error, because the response will have no candles.
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=1)
@@ -34,6 +34,16 @@ class Charts():
 
         return df
 
+    def print_365_weekly(self, symbol):
+        earliest_date = datetime.datetime.now() - datetime.timedelta(days=366)
+        # price_history = self.client.get_price_history_every_day(symbol, start_datetime=earliest_date).json()
+        price_history = self.client.get_price_history_every_week(symbol, start_datetime=earliest_date).json()
+
+        df = self.price_history_to_dataframe(price_history)
+
+        self.my_plot_settings(symbol, df)
+
+        return df
 
     def price_history_to_dataframe(self, price_history):
         df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])

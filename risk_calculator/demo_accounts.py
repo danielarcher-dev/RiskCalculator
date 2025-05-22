@@ -35,32 +35,43 @@ def main():
 
     acct.market_hours()
 
-    print_my_watchlist(acct)
+    # watchlist_file = "./data/watchlist.json"
+    # chart_file = "./data/watchlist.xlsx"
+    print_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
 
 
+    # acct.chart_file
 
-
-def print_my_watchlist(acct):
+def print_my_watchlist(acct, watchlist_file, chart_file):
     import pandas as pd
     import xlsxwriter
     
     my_chart = chart.Charts(acct)
 
-    watchlist_file = "./data/watchlist.json"
-    chart_file = "./data/watchlist.xlsx"
+    
+
     
     with open(watchlist_file, "r") as json_file:
         wlist = json.load(json_file) 
-    print(wlist)
+    # print(wlist)
 
     writer = pd.ExcelWriter(chart_file, engine="xlsxwriter")
     # workbook = writer.book
 
     for stock in wlist['stocks']:
         df = my_chart.print_180_daily(stock)
-        df.to_excel(writer, sheet_name=stock)
+        df_blank = pd.DataFrame()
+        df_blank.to_excel(writer, sheet_name=stock)
         worksheet = writer.sheets[stock]
+        # worksheet.insert_rows(28)
         worksheet.insert_image("A1", "{0}/{1}_chart.png".format(my_chart.path, stock))
+
+        df = my_chart.print_365_weekly(stock)
+        df_blank = pd.DataFrame()
+        df_blank.to_excel(writer, sheet_name=stock)
+        worksheet = writer.sheets[stock]
+        # worksheet.insert_rows(28)
+        worksheet.insert_image("A30", "{0}/{1}_chart.png".format(my_chart.path, stock))
 
     writer.close()
 

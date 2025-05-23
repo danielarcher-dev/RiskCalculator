@@ -60,20 +60,6 @@ class Charts():
 
     def my_plot_settings(self, symbol, df):
         
-        # fplt.plot(
-        # df,
-        # type='candle',
-        # style='charles',
-        # title='{0}, May - 2025'.format(symbol),
-        # ylabel='Price ($)',
-        # figsize=(21,6),
-        # show_nontrading=True,
-        # volume=True,
-        # datetime_format=' %Y-%m-%d',
-        # tight_layout=True,
-        # savefig=dict(fname='{0}/{1}_chart.png'.format(self.path, symbol), dpi=1200)
-        # )
-        
 
         fig = fplt.figure(figsize=(21, 8), style='charles')
         ax1 = fig.add_subplot(3, 1, (1, 2))

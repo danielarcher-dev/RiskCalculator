@@ -31,29 +31,34 @@ def main():
     transaction = acct.Transactions
 
     # high level reporting
-    print_welcome(securities_account)
+    print_welcome(acct.SecuritiesAccount)
+    print_options(acct.SecuritiesAccount)
 
-    acct.market_hours()
+    # acct.market_hours()
 
     # watchlist_file = "./data/watchlist.json"
     # chart_file = "./data/watchlist.xlsx"
-    print_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
+    print_my_watchlist(watchlist_file=acct.watchlist)
+
+    chart_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
+
 
 
     # acct.chart_file
+def print_my_watchlist(watchlist_file):
+    with open(watchlist_file, "r") as json_file:
+        wlist = json.load(json_file) 
+    for item in wlist:
+         print(item)
 
-def print_my_watchlist(acct, watchlist_file, chart_file):
+def chart_my_watchlist(acct, watchlist_file, chart_file):
     import pandas as pd
     import xlsxwriter
     
     my_chart = chart.Charts(acct)
 
-    
-
-    
     with open(watchlist_file, "r") as json_file:
         wlist = json.load(json_file) 
-    # print(wlist)
 
     writer = pd.ExcelWriter(chart_file, engine="xlsxwriter")
     # workbook = writer.book

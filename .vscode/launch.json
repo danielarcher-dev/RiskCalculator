@@ -12,6 +12,15 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
+        },
+                {
+            "name": "Python Debugger: demo_accounts",
+            "type": "debugpy",
+            "request": "launch",
+            // "program": "${file}",
+            "program": "${workspaceFolder}/risk_calculator/demo_accounts.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

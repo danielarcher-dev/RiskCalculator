@@ -19,9 +19,17 @@ local_config.conf
     [RuntimeSecrets]
     target_account =
 
+    [Charting]
+    project_root = /RiskCalculator
+    data_folder = ${project_root}/data
+    charts_path = ${data_folder}/charts/
+    charts_file = ${data_folder}/charts/charting_file_<date>.xlsx
+    watchlist = ${data_folder}/watchlist.json
+
 
 Structure of the data folder:
     data
     |   charts
+    |   reporting
     |   securities_account
     |   transactions

@@ -16,7 +16,7 @@ class AccountsLauncher():
         
         if (securities_account_file == None) and (transactions_file == None):
             self.read_config()
-            self.get_client()
+            self.client = conf.get_client()
             self.target_account = self.config['RuntimeSecrets']['target_account']
             self.account_numbers = self.get_account_numbers()
             self.hash = self.get_account_hash(self.target_account)
@@ -52,9 +52,6 @@ class AccountsLauncher():
         self.config = conf.get_config()
         self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
         self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
-        
-    def get_client(self):
-        self.client = conf.get_client()
     
     def get_account_numbers(self):
         resp = self.client.get_account_numbers()
@@ -108,19 +105,19 @@ class AccountsLauncher():
         with open(self.transactions_file, 'w') as json_file:
             json.dump(self.Transactions.TransactionData, json_file)
 
-    def run(self):
-        print("hello")
+#     def run(self):
+#         print("hello")
 
-def run():
-    launcher = AccountsLauncher()
-    # launcher.start()
-    launcher.run()
+# def run():
+#     launcher = AccountsLauncher()
+#     # launcher.start()
+#     launcher.run()
 
-if __name__ == '__main__':
-    # if RUN_ARGS.getboolean('profile'):
-    #     import cProfile
-    #     cProfile.run('main()', sort='tottime')
-    # else:
-    #     main()
-    # main()
-    run()
+# if __name__ == '__main__':
+#     # if RUN_ARGS.getboolean('profile'):
+#     #     import cProfile
+#     #     cProfile.run('main()', sort='tottime')
+#     # else:
+#     #     main()
+#     # main()
+#     run()

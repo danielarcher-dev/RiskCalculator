@@ -5,7 +5,7 @@ import accounts.accounts as accounts
 import charts.charts as chart
 import time
 import schwab
-
+import datetime
 
 import numpy as np
 
@@ -15,7 +15,7 @@ import numpy as np
 def main():
     #these are for live:
     acct = accounts.AccountsLauncher()
-    acct.run()
+    # acct.run()
 
     client = acct.client
 
@@ -37,6 +37,12 @@ def main():
 
     my_chart.print_180_daily('MSFT')
     # chart.print_180_daily('MSFT', client)
+
+    # acct.
+
+
+# def report(acct: type[accounts.c]):
+#     acct
 
 
 

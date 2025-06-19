@@ -6,6 +6,7 @@ import json_to_csv
 import pandas as pd
 from io import StringIO
 import httpx
+import accounts.securities_account as sa
 
 class AccountsLauncher():
     def __init__(self):
@@ -15,6 +16,8 @@ class AccountsLauncher():
         self.target_account = self.config['RuntimeSecrets']['target_account']
         self.account_numbers = self.get_account_numbers()
         self.hash = self.get_account_hash(self.target_account)
+        self.Account = sa.SecuritiesAccount(self.get_account_details(self.hash))
+        
     
     def parse_args(self):
         #todo:

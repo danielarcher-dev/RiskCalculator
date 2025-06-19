@@ -1,5 +1,4 @@
-import accounts.instrument as instrument
-import accounts.transaction as tran
+import accounts.transactions.transaction as tran
 
 class TransactionData():
     def __init__(self, items):

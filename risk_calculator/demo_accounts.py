@@ -2,25 +2,30 @@
 # import httpx
 import json
 import accounts.accounts as accounts
+# import datetime
+import schwab
 
-launcher = accounts.AccountsLauncher()
-launcher.run()
-
-account_numbers = launcher.account_numbers
+acct = accounts.AccountsLauncher()
+acct.run()
 
 
-hash = launcher.hash
 
-details = launcher.get_account_details(hash)
+# high level reporting
+lines = []
+print(str.format("My net liquidation value is: {0}", acct.SecuritiesAccount.CurrentBalances.LiquidationValue))
+print(str.format("My total cash is: {0}", acct.SecuritiesAccount.CurrentBalances.CashBalance))
 
-for item in details:
-    print(item)
+print("My positions are:")
+for pos in acct.SecuritiesAccount.Positions:
+    # print(pos)
+    print(str.format("{0},{1},{2}", pos.symbol, pos.Quantity, pos.marketValue))
 
-acct = launcher.Account
+print(acct.Transactions)
+# resp = launcher.client.get_transactions(launcher.hash)
+# resp = launcher.client.get_market_hours(markets=schwab.client.Client.MarketHours.Market.OPTION)
+# print(resp.json())
 
-print(acct.CurrentBalances.CashBalance)
-
-print(details['aggregatedBalance']['liquidationValue'])
-output_file = launcher.config['AppConfig']['output_file']
-with open(output_file, 'w') as json_file:
-    json.dump(details, json_file)
+# # look at previous files
+# input_file = './data/output.json'
+# older = accounts.AccountsLauncher(input_file)
+# print(older.Account.CurrentBalances.CashBalance)

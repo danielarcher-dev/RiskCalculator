@@ -176,4 +176,5 @@ cython_debug/
 
 ###
 secrets.conf
+./secrets/*
 .DS_Store

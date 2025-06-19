@@ -8,13 +8,15 @@ import schwab
 
 def main():
     #these are for live:
-    # acct = accounts.AccountsLauncher()
-    # acct.run()
+    acct = accounts.AccountsLauncher()
+    acct.run()
 
     #these are for file
-    securities_account_file = './data/output_2025-05-02.json'
-    transactions_file = './data/transactions_file_2025-05-02.json'
-    acct = load_account_file(securities_account_file=securities_account_file, transactions_file=transactions_file)
+    # securities_account_file = './data/output_2025-05-02.json'
+    # transactions_file = './data/transactions_file_2025-05-02.json'
+    # acct = load_account_file(securities_account_file=securities_account_file, transactions_file=transactions_file)
+    
+    
     securities_account = acct.SecuritiesAccount
     transaction = acct.Transactions
 
@@ -43,23 +45,36 @@ def main():
 
     print("My transactions are:")
     for tran in transaction.Transactions:
-
-        earliest_date = datetime.datetime.now
-
+        default_transaction_history_lookback = int(acct.config['AppConfig']['default_transaction_history_lookback'])
+        earliest_date = datetime.datetime.now() - datetime.timedelta(days=default_transaction_history_lookback)
+        
+        tradeDate = datetime.datetime.fromisoformat(tran.tradeDate)
         # date
-        # if tran.tradeDate > 
+        if  tradeDate.date() > earliest_date.date():
 
-        line = str.format("{0},{1},{2},{3},{4}", tran.activityId, tran.tradeDate, tran.type, tran.subAccount, tran.netAmount)
-        
-        print(line)
-        for transferItem in tran.transferItems:
-            line = str.format("{0},{1},{2},{3}", transferItem.assetType,transferItem.symbol,transferItem.description,transferItem.amount)
-            print(line)
-        
+            if tran.type == 'TRADE':
+                    
+                # print(tradeDate.strftime('%Y-%m-%d %H:%M'))
+                # line = str.format("{0},{1},{2},{3},{4}", tradeDate.strftime('%Y-%m-%d %H:%M'), tran.activityId, tran.description, tran.type, tran.netAmount)
+                line = str.format("{0},{1},{2},{3},{4},{5}", tradeDate.date(), tradeDate.time(), tran.type, tran.orderId, tran.description,tran.tradeDate)
+            
+                print(line)
+                for transferItem in tran.transferItems:
+                    # if(transferItem.
+                    if(transferItem.assetType == 'CURRENCY'):
+                        line = transferItem.feeType, transferItem.amount, transferItem.cost
+                    # line = str.format("{0},{1},{2},{3},{4}", transferItem.assetType,transferItem.symbol,transferItem.description,transferItem.amount,transferItem.feeType)
+                        print(line)
+                    effect = ''
+                    try:
+                        effect = transferItem.positionEffect
+                        print(effect)
+                    except:
+                        print("no effect")
+            else:
+                print(tran)
 
-
-    # valuation_date = datetime.strptime('20221229', '%Y%m%d').date()
-
+    
 
 def market_hours():
     # resp = launcher.client.get_transactions(launcher.hash)

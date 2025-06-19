@@ -11,14 +11,17 @@ class TransferItem():
         self.closingPrice = self.instrument['closingPrice']
         self.amount = item['amount']
         self.cost = item['cost']
-
         if self.assetType == 'CURRENCY':
             try:
                 self.feeType = item['feeType']
             except:
                 self.feeType = None
 
-        # if self.assetType != 'EQUITY':
+        if self.assetType == 'EQUITY':
+            try:
+                self.positionEffect = item['positionEffect']
+            except:
+                self.positionEffect = None
         try:
             self.description = self.instrument['description']
         except:

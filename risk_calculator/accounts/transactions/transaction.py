@@ -22,12 +22,12 @@ class Transaction():
             self.positionId = item['positionId']
         except:
             self.positionId = None
-            print(str.format("{0} has no position.", self.activityId))
+            # print(str.format("{0} has no position.", self.activityId))
         try:
             self.orderId = item['orderId']
         except:
             self.orderId = None
-            print(str.format("{0} has no order.", self.activityId))
+            # print(str.format("{0} has no order.", self.activityId))
         self.netAmount = item['netAmount']
         
         self.transferItems = [tran_item.TransferItem(transfer_item) for transfer_item in item['transferItems']]

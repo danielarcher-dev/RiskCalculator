@@ -7,6 +7,7 @@ import pandas as pd
 from io import StringIO
 import httpx
 import accounts.securities_account as sa
+import accounts.transaction_data as ta
 import datetime
 
 class AccountsLauncher():
@@ -28,7 +29,7 @@ class AccountsLauncher():
             self.hash = self.get_account_hash(self.target_account)
             # this is a potential failure point. there are other responses than securitiesAccount, which I haven't implemented
             self.SecuritiesAccount = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
-            self.Transactions = self.get_account_transactions()
+            self.Transactions = ta.TransactionData(self.get_account_transactions())
             self.__save__()
 
         # these attributes should be the same whether the data is live from client or from passed json
@@ -93,7 +94,7 @@ class AccountsLauncher():
         
         # save transactions data to time_dated file
         with open(self.transactions_file, 'w') as json_file:
-            json.dump(self.Transactions, json_file)
+            json.dump(self.Transactions.TransactionData, json_file)
 
     def run(self):
         print("hello")

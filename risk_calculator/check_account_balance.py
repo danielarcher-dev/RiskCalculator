@@ -1,28 +1,12 @@
 from schwab import auth, client
 import json
 import csv
-# from configparser import ConfigParser
-import configparser
+import conf
 import json_to_csv
 import pandas as pd
 from io import StringIO
 import httpx
 
-def get_client():
-    config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-    config.read('./secrets/secrets.conf')
-
-    api_key = config['AppSecrets']['app_key']
-    app_secret = config['AppSecrets']['secret']
-    callback_url = config['AppSecrets']['callback_url']
-    token_path = config['AppSecrets']['token_path']
-
-    return auth.easy_client(api_key, app_secret, callback_url, token_path)
-
-def get_config():
-    config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-    config.read('./secrets/local_config.conf')
-    return config
 
 def get_account_hash(c):
     resp = c.get_account_numbers()
@@ -41,8 +25,8 @@ def get_account_hash(c):
 
 def main():
     # args = parser.parse_args()
-    c = get_client()
-    conf = get_config()
+    c = conf.get_client()
+    config = conf.get_config()
     # r = c.get_price_histor
     hash = get_account_hash(c)
     print(hash)

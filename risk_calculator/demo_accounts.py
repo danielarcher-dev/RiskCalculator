@@ -6,8 +6,6 @@ import accounts.accounts as accounts
 launcher = accounts.AccountsLauncher()
 launcher.run()
 
-# print(launcher.get_account_numbers())
-#get first account
 account_numbers = launcher.account_numbers
 
 

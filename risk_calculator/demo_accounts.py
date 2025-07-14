@@ -15,7 +15,6 @@ import numpy as np
 def main():
     #these are for live:
     acct = accounts.AccountsLauncher()
-    acct.run()
 
     client = acct.client
 

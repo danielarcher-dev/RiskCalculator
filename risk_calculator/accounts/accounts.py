@@ -108,13 +108,6 @@ class AccountsLauncher():
         with open(self.transactions_file, 'w') as json_file:
             json.dump(self.Transactions.TransactionData, json_file)
 
-    def run(self):
-        print("hello")
-
-def run():
-    launcher = AccountsLauncher()
-    # launcher.start()
-    launcher.run()
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

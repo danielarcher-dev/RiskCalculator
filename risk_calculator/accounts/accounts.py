@@ -109,11 +109,11 @@ class AccountsLauncher():
             json.dump(self.Transactions.TransactionData, json_file)
 
 
-if __name__ == '__main__':
-    # if RUN_ARGS.getboolean('profile'):
-    #     import cProfile
-    #     cProfile.run('main()', sort='tottime')
-    # else:
-    #     main()
-    # main()
-    run()
+# if __name__ == '__main__':
+#     # if RUN_ARGS.getboolean('profile'):
+#     #     import cProfile
+#     #     cProfile.run('main()', sort='tottime')
+#     # else:
+#     #     main()
+#     # main()
+#     run()

@@ -2,12 +2,14 @@
 # import httpx
 import json
 import accounts.accounts as accounts
+import accounts.position as position
 import charts.charts as chart
 import time
 import schwab
-
-
+from typing import cast
+import pandas as pd
 import numpy as np
+from io import StringIO
 
 
 
@@ -28,9 +30,10 @@ def main():
     transaction = acct.Transactions
 
     # high level reporting
-    print_welcome(securities_account)
+    print_welcome(securities_account, client)
 
     acct.market_hours()
+
 
     my_chart = chart.Charts(acct)
 
@@ -42,15 +45,16 @@ def main():
 def load_account_file(securities_account_file, transactions_file):
     return accounts.AccountsLauncher(securities_account_file=securities_account_file, transactions_file=transactions_file)
 
-def print_welcome(securities_account):
+def print_welcome(securities_account, client):
         print(str.format("My net liquidation value is: {0}", securities_account.CurrentBalances.LiquidationValue))
         print(str.format("My total cash is: {0}", securities_account.CurrentBalances.CashBalance))
 
         print("My stock positions are:")
         for pos in securities_account.Positions:
-            # print(pos)
+            pos = cast(position.Position, pos)
             if(pos.instrument.AssetType == 'EQUITY'):
-                line = str.format("{0},{1},{2}", pos.symbol, pos.Quantity, pos.marketValue)
+                lastPrice = get_last_price(client, pos.symbol)
+                line = str.format("{0}, {1}, {2}, {3}", pos.symbol, pos.Quantity, lastPrice, pos.marketValue)
                 print(line)
 
 def print_options(securities_account):
@@ -92,6 +96,17 @@ def print_transactions(transaction, acct):
                             print("no effect")
                 else:
                     print(tran)
+
+def get_last_price(client, symbol):
+    client = cast(schwab.client.Client, client)
+
+    response = client.get_quote(symbol)
+    response.raise_for_status()
+
+    df = pd.read_json(StringIO(json.dumps(response.json())))
+    price = df[symbol]['regular']['regularMarketLastPrice']
+    return price
+     
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

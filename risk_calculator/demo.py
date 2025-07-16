@@ -1,4 +1,4 @@
-from schwab import auth, client
+from schwab import auth, client, streaming
 import json
 import csv
 # from configparser import ConfigParser
@@ -18,38 +18,35 @@ def main():
     # print(json.dumps(r.json(), indent=4))
 
     # r2 = c.get_instruments('AAPL,MSFT,GME,NTB',c.Instrument.Projection.FUNDAMENTAL)
-    r2 = c.get_instrument('MSFT',c.Instrument.Projection.FUNDAMENTAL)
-    r2.raise_for_status()
-    # print(json.dumps(r2.json(), indent=4))
+    # r2 = c.get_instruments('MSFT',c.Instrument.Projection.FUNDAMENTAL)
+    # r2.raise_for_status()
+    # df = pd.read_json(json.dumps(r2.json()))
+    # print(df)
+    # print(df['instruments'][0]['fundamental']['symbol'])
     
-    in_memory_file = StringIO()
+    # in_memory_file = StringIO()
 
-    # json.dump(r2.json(), in_memory_file)
-    # in_memory_file.write(json.dumps(r2.json()))
-    # in_memory_file.write("hello")
-    df = pd.read_json(json.dumps(r2.json()))
-    # print(in_memory_file.readlines)
-    # df = pd.read_json(in_memory_file)
-    print(df)
+    r3 = c.get_quote('MSFT')
+    r3.raise_for_status()
+    # print(r3.json())
+    df3 = pd.read_json(json.dumps(r3.json()))
+    print(df3)
+    price = df3['MSFT']['regular']['regularMarketLastPrice']
+    print(price)
 
+    # c.get_price_history('MSFT')
+    # streaming.StreamClient.login()
+    # # conf.get_stream_client()
+    # streaming.StreamClient
+    
+    # streaming.StreamClient.logout()
+    
 
-    output_file = config['AppConfig']['output_file']
-    with open(output_file, 'w') as json_file:
-        json.dump(r2.json(), json_file)
+    # save to file
+    # output_file = config['AppConfig']['output_file']
+    # with open(output_file, 'w') as json_file:
+    #     json.dump(r2.json(), json_file)
 
-
-    # output_csv = './data/output.csv'
-    # with open(output_csv, "w", newline="") as csv_file:
-    #     csv_writer = csv.writer(csv_file)  
-    #     # Write the header
-    #     data = json.loads(r2.json())
-    #     print(data['instruments'])
-    #     # header = data[0].keys()
-    #     # csv_writer.writerow(header)
-
-    #     # # Write the data rows
-    #     # for row in data:
-    #     #     csv_writer.writerow(row.values())
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

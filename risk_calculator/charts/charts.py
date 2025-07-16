@@ -41,11 +41,14 @@ class Charts():
         return df
 
     def my_plot_settings(self, symbol, df):
+        right_now = datetime.datetime.now()
+        month = right_now.strftime("%B")
+        year = right_now.year
         fplt.plot(
         df,
         type='candle',
         style='charles',
-        title='{0}, May - 2025'.format(symbol),
+        title='{0}, {1} - {2}'.format(symbol, month, year),
         ylabel='Price ($)',
         figsize=(21,6),
         savefig=dict(fname='{0}/{1}_chart.png'.format(self.path, symbol), dpi=1200)

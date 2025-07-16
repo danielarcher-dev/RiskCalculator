@@ -10,6 +10,7 @@ from typing import cast
 import pandas as pd
 import numpy as np
 from io import StringIO
+import xlsxwriter
 
 
 
@@ -30,15 +31,22 @@ def main():
     transaction = acct.Transactions
 
     # high level reporting
-    print_welcome(securities_account, client)
+    # print_welcome(securities_account, client)
+    # print_options(acct.SecuritiesAccount)
 
-    acct.market_hours()
+    # acct.market_hours()
 
 
-    my_chart = chart.Charts(acct)
+    # my_chart = chart.Charts(acct)
 
-    my_chart.print_180_daily('MSFT')
+    # my_chart.print_180_daily('MSFT')
     # chart.print_180_daily('MSFT', client)
+
+    # watchlist_file = "./data/watchlist.json"
+    # chart_file = "./data/watchlist.xlsx"
+    print_my_watchlist(watchlist_file=acct.watchlist)
+
+    chart_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
 
 
 
@@ -106,7 +114,41 @@ def get_last_price(client, symbol):
     df = pd.read_json(StringIO(json.dumps(response.json())))
     price = df[symbol]['regular']['regularMarketLastPrice']
     return price
-     
+
+def print_my_watchlist(watchlist_file):
+    with open(watchlist_file, "r") as json_file:
+        watchlist = json.load(json_file) 
+    for item in watchlist:
+         print(item)
+
+def chart_my_watchlist(acct, watchlist_file, chart_file):
+    my_chart = chart.Charts(acct)
+
+    with open(watchlist_file, "r") as json_file:
+        watchlist = json.load(json_file) 
+
+
+    # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop
+    # and then writing them to Excel in a second loop
+    for stock in watchlist['stocks']:
+        # we don't actually need the data frames here, we're just interested in the image
+        my_chart.print_180_daily(stock)
+        my_chart.print_365_weekly(stock)
+
+    with pd.ExcelWriter(chart_file, engine="xlsxwriter") as writer:
+        writer.set_size(2000, 950)
+        for stock in sorted(watchlist['stocks']):
+            # abuse a blank data frame to create worksheet
+            df_blank = pd.DataFrame()
+            df_blank.to_excel(writer, sheet_name=stock)
+
+            worksheet = writer.sheets[stock]
+            worksheet.set_column("A:A", 1360)
+            worksheet.set_zoom(120)
+            worksheet.insert_image("A1", "{0}/{1}_chart_{2}.png".format(my_chart.path, stock, "180_daily"))
+            # # worksheet.insert_rows(28)
+            worksheet.insert_image("A30", "{0}/{1}_chart_{2}.png".format(my_chart.path, stock, "365_weekly"))
+
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

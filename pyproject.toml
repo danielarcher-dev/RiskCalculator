@@ -13,7 +13,8 @@ dependencies = [
     "cufflinks (>=0.17.3,<0.18.0)",
     "numpy (==1.26.4)",
     "nbformat (>=5.10.4,<6.0.0)",
-    "mplfinance (>=0.12.10b0,<0.13.0)"
+    "mplfinance (>=0.12.10b0,<0.13.0)",
+    "xlsxwriter (>=3.2.5,<4.0.0)"
 ]
 
 

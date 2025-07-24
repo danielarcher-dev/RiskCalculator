@@ -124,6 +124,6 @@ class Charts():
                 worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
                 worksheet.insert_image('A31', image2, {'x_scale': scale, 'y_scale': scale})
 
-                worksheet.set_column("A:A", 215) # width not in pixels
+                worksheet.set_column("A:A", 220) # width not in pixels
                 worksheet.set_column("B:B", 5) # width not in pixels
 

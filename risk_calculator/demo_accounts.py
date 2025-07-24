@@ -136,19 +136,28 @@ def chart_my_watchlist(acct, watchlist_file, chart_file):
         my_chart.print_365_weekly(stock)
 
     with pd.ExcelWriter(chart_file, engine="xlsxwriter") as writer:
-        writer.set_size(2000, 950)
+        writer.book.set_size(2620, 1820)
         for stock in sorted(watchlist['stocks']):
             # abuse a blank data frame to create worksheet
             df_blank = pd.DataFrame()
             df_blank.to_excel(writer, sheet_name=stock)
 
             worksheet = writer.sheets[stock]
-            worksheet.set_column("A:A", 1360)
-            worksheet.set_zoom(120)
-            worksheet.insert_image("A1", "{0}/{1}_chart_{2}.png".format(my_chart.path, stock, "180_daily"))
-            # # worksheet.insert_rows(28)
-            worksheet.insert_image("A30", "{0}/{1}_chart_{2}.png".format(my_chart.path, stock, "365_weekly"))
+            worksheet.set_zoom(100)
 
+            image1 = "{0}/{1}_chart_{2}.png".format(my_chart.path, stock, "180_daily")
+            image2 = "{0}/{1}_chart_{2}.png".format(my_chart.path, stock, "365_weekly")
+            
+            # setting the image to fit inside the column width is really wonky
+            # to work around this, I'm setting it just outside my desired width
+            scale = (1580 / 1718)
+
+            worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
+            worksheet.insert_image('A31', image2, {'x_scale': scale, 'y_scale': scale})
+
+            worksheet.set_column("A:A", 215) # width not in pixels
+            worksheet.set_column("B:B", 5) # width not in pixels
+                     
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

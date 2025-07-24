@@ -2,12 +2,8 @@ import mplfinance as fplt
 import pandas as pd
 import datetime
 
-import accounts.accounts as accounts
-
 class Charts():
     def __init__(self, account):
-        # self.account = accounts(account)
-
         self.account = account
         self.client = account.client
         self.path = self.account.config['Charting']['charts_path']
@@ -32,7 +28,6 @@ class Charts():
 
     def print_365_weekly(self, symbol):
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=366)
-        # price_history = self.client.get_price_history_every_day(symbol, start_datetime=earliest_date).json()
         price_history = self.client.get_price_history_every_week(symbol, start_datetime=earliest_date).json()
 
         df = self.price_history_to_dataframe(price_history)
@@ -49,49 +44,14 @@ class Charts():
         df.shape
         df.head(3)
         df.tail(3)
-        # dt_range = pd.date_range(start="2025-05-01", end="2025-05-16")
-        # df = df[df.index > (dt_range)]
-        # df = df[df.index.]
         return df
-
-    # def my_plot_settings(self, symbol, df):
-    #     right_now = datetime.datetime.now()
-    #     month = right_now.strftime("%B")
-    #     year = right_now.year
-    #     fplt.plot(
-    #     df,
-    #     type='candle',
-    #     style='charles',
-    #     title='{0}, {1} - {2}'.format(symbol, month, year),
-    #     ylabel='Price ($)',
-    #     figsize=(21,6),
-    #     savefig=dict(fname='{0}/{1}_chart.png'.format(self.path, symbol), dpi=1200)
-    #     )
-
-    #     # fig = fplt.figure(figsize=(21, 7))  # Wider chart
-    #     # ax = fig.add_subplot(1, 1, 1)
-
-    #     # fplt.plot(df,
-    #     #           type='candle',
-    #     #           style='charles',
-    #     #         #   suptitle='{0}, May - 2025'.format(symbol),
-    #     #           ylabel='Price ($)',
-    #     #           ax=ax,
-    #     #           savefig=dict(fname='{0}_chart.png'.format(symbol), dpi=1200))
-    #     # fig.show()
-
-
-    #     # fig, ax = fplt.plot(df, type='candle', style='charles', returnfig=True)
-    #     # fig.update_layout(width=1200, height=600)
-    #     # fig.savefig('{0}_chart.png'.format(symbol), dpi=300)
-    #     # fig.show()
 
     def my_plot_settings(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
 
-        fig = fplt.figure(figsize=(21, 8), style='charles')
+        fig = fplt.figure(figsize=(18, 8), style='charles', tight_layout=True)
         ax1 = fig.add_subplot(3, 1, (1, 2))
         # ax2 = fig.add_subplot(3, 1, 3, sharex=ax1)
         fig.subplots_adjust(hspace=0)
@@ -121,8 +81,7 @@ class Charts():
         # tight_layout=True,
         # savefig=dict(fname='{0}/{1}_chart_{2}.png'.format(self.path, symbol, timeframe), dpi=1200, bbox_inches="tight")
         )
-        # fig.savefig('{0}/{1}_chart_{2}.png'.format(self.path, symbol, timeframe), dpi=1200, bbox_inches="tight")
-        fig.savefig('{0}/{1}_chart_{2}.png'.format(self.path, symbol, timeframe), dpi=600, bbox_inches="tight")
+        fig.savefig('{0}/{1}_chart_{2}.png'.format(self.path, symbol, timeframe), dpi=96, bbox_inches="tight")
         
         # TODO: matplot gives a runtime warning here about too many figures opened, possibly using too much memory unless they are explicitly closed
         # but this implementation doesn't actually have a close method, and isn't currently having memory problems

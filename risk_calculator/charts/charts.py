@@ -1,6 +1,7 @@
 import mplfinance as fplt
 import pandas as pd
 import datetime
+import json
 
 class Charts():
     def __init__(self, account):
@@ -90,3 +91,39 @@ class Charts():
     def date_transform(self, datetime_data):
         timestamp = datetime_data/1000
         return datetime.datetime.fromtimestamp(timestamp)
+    
+
+    def chart_my_watchlist(self, acct, watchlist_file, chart_file):
+        with open(watchlist_file, "r") as json_file:
+            watchlist = json.load(json_file) 
+
+        # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop
+        # and then writing them to Excel in a second loop
+        for stock in watchlist['stocks']:
+            # we don't actually need the data frames here, we're just interested in the image
+            self.print_180_daily(stock)
+            self.print_365_weekly(stock)
+
+        with pd.ExcelWriter(chart_file, engine="xlsxwriter") as writer:
+            writer.book.set_size(2620, 1820)
+            for stock in sorted(watchlist['stocks']):
+                # abuse a blank data frame to create worksheet
+                df_blank = pd.DataFrame()
+                df_blank.to_excel(writer, sheet_name=stock)
+
+                worksheet = writer.sheets[stock]
+                worksheet.set_zoom(100)
+
+                image1 = "{0}/{1}_chart_{2}.png".format(self.path, stock, "180_daily")
+                image2 = "{0}/{1}_chart_{2}.png".format(self.path, stock, "365_weekly")
+                
+                # setting the image to fit inside the column width is really wonky
+                # to work around this, I'm setting it just outside my desired width
+                scale = (1580 / 1718)
+
+                worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
+                worksheet.insert_image('A31', image2, {'x_scale': scale, 'y_scale': scale})
+
+                worksheet.set_column("A:A", 215) # width not in pixels
+                worksheet.set_column("B:B", 5) # width not in pixels
+

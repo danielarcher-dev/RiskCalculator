@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-
+from schwab.client import Client
 class Instrument():
     def __init__(self, item):
         self.AssetType = item['assetType']
@@ -11,7 +11,12 @@ class Instrument():
         if self.AssetType == "OPTION":
             self.description = item['description']
             self.type = item['type']
-            self.putCall = item['putCall']
+            if item['putCall'] == 'PUT':
+                self.putCall = Client.Options.ContractType.PUT
+            elif item['putCall'] == 'CALL':
+                self.putCall = Client.Options.ContractType.CALL
+            else:
+                self.putCall = item['putCall']
             self.underlyingSymbol = item['underlyingSymbol']
             occ = self.parse_occ_symbol()
             self.expiration = occ["expiration"]

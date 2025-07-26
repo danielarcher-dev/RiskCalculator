@@ -9,11 +9,11 @@ class Position():
         self.currentDayProfitLoss = item['currentDayProfitLoss']
         self.currentDayProfitLossPercentage = item['currentDayProfitLossPercentage']
         
-        # self.settledLongQuantity = item['settledLongQuantity']
-        # self.settledShortQuantity = item['settledShortQuantity']
+        self.settledLongQuantity = item['settledLongQuantity']
+        self.settledShortQuantity = item['settledShortQuantity']
         self.instrument = instrument.Instrument(item['instrument'])
         self.symbol = self.instrument.symbol
-        # self.mark = self.instrument.
+        
         self.marketValue = item['marketValue']
         self.maintenanceRequirement = item['maintenanceRequirement']
         self.currentDayCost = item['currentDayCost']
@@ -24,8 +24,12 @@ class Position():
             self.averageShortPrice = item['averageShortPrice']
             self.averagePrice = self.averageShortPrice
             self.taxLotAverageShortPrice = item['taxLotAverageShortPrice']
+            self.taxLotAveragePrice = self.taxLotAverageShortPrice
             self.shortOpenProfitLoss = item['shortOpenProfitLoss']
             self.openProfitLoss = self.shortOpenProfitLoss
+
+            # TODO: it is possible for a position to swing from long to short and back
+            # to be careful when performing analysis on this
             self.previousSessionShortQuantity = item['previousSessionShortQuantity']
             
         elif self.__longQuantity__ > 0:
@@ -34,6 +38,21 @@ class Position():
             self.averageLongPrice = item['averageLongPrice']
             self.averagePrice = self.averageLongPrice
             self.taxLotAverageLongPrice = item['taxLotAverageLongPrice']
+            self.taxLotAveragePrice = self.taxLotAverageLongPrice
             self.longOpenProfitLoss = item['longOpenProfitLoss']
             self.openProfitLoss = self.longOpenProfitLoss
             self.previousSessionLongQuantity = item['previousSessionLongQuantity']
+
+    #     self.TradedToday()
+
+    # def TradedToday(self):
+    #     # perform a simple test to determine if there was a trade today
+    #     # this logic fails
+    #     # eg. if I bought 5 shares, then sold 5 shares today
+    #     # this test would incorrectly return False
+    #     if self.__shortQuantity__ != self.previousSessionShortQuantity:
+    #         return True
+    #     elif self.__longQuantity__ != self.previousSessionLongQuantity:
+    #         return True
+    #     else:
+    #         return False

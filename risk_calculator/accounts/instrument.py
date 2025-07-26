@@ -1,3 +1,6 @@
+from datetime import datetime
+import re
+
 class Instrument():
     def __init__(self, item):
         self.AssetType = item['assetType']
@@ -10,3 +13,27 @@ class Instrument():
             self.type = item['type']
             self.putCall = item['putCall']
             self.underlyingSymbol = item['underlyingSymbol']
+            occ = self.parse_occ_symbol()
+            self.expiration = occ["expiration"]
+            self.strike = occ["strike"]
+
+
+    def parse_occ_symbol(self):
+        match = re.match(r'([A-Z ]{6})(\d{6})([CP])(\d{8})', self.symbol)
+        if not match:
+            return None
+
+        # root = match.group(1).strip()
+        date_str = match.group(2)
+        # option_type = match.group(3)
+        strike_raw = match.group(4)
+
+        expiration = datetime.strptime(date_str, '%y%m%d').date()
+        strike = int(strike_raw) / 1000
+
+        return {
+            # 'root': root,
+            'expiration': expiration,
+            # 'type': 'Put' if option_type == 'P' else 'Call',
+            'strike': strike
+        }    

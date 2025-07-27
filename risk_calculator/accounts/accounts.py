@@ -54,6 +54,7 @@ class AccountsLauncher():
         self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
         self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
         self.watchlist = self.config['Charting']['watchlist']
+        self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
     
     def get_client(self):
         self.client = conf.get_client()

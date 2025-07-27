@@ -20,6 +20,14 @@
             "program": "${workspaceFolder}/risk_calculator/demo_accounts.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}"
+        },
+                {
+            "name": "Python Debugger: RiskCalculator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/risk_calculator/RiskCalculator.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

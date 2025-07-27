@@ -20,7 +20,7 @@ class Instrument():
             self.underlyingSymbol = item['underlyingSymbol']
             occ = self.parse_occ_symbol()
             self.expiration = occ["expiration"]
-            self.strike = occ["strike"]
+            self.strike = float(occ["strike"])
 
 
     def parse_occ_symbol(self):

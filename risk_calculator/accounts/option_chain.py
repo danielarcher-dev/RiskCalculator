@@ -150,6 +150,41 @@ def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expira
 
 
 
+def get_market_value_of_option(acct, underlying_symbol, contract_type, strike=None, expiration=None, strategy=SchwabClient.Client.Options.Strategy.SINGLE, include_underlying_quote=True):
+    pos = cast(position.Position, pos)
+    underlying_symbol = pos.instrument.underlyingSymbol
+    contract_type = pos.instrument.putCall
+    strike = pos.instrument.strike
+    expiration = pos.instrument.expiration
+    strategy=SchwabClient.Client.Options.Strategy.SINGLE
+    include_underlying_quote=True
+
+    get_option_chain(acct, underlying_symbol, contract_type, strike, expiration, strategy, include_underlying_quote)
+
+    for dte in chain_json[ExpDateMap]:
+        # This logic assumes options are traded for this symbol on given expiration date
+        if str(expiration) == dte.split(":")[0]:
+            for chain_strike in chain_json[ExpDateMap][dte]:
+                if strike == float(chain_strike):
+                    # If I've nested this correctly, there should only be one result matching dte and strike
+                    chain_values = chain_json[ExpDateMap][dte][chain_strike][0]
+                    option_symbol = chain_values["symbol"]
+                    premium_bid = chain_values["bid"]
+                    daysToExpiration = chain_values["daysToExpiration"]
+                    description = chain_values["description"]
+
+                    # TODO: add a handler for this
+                    required_capital = strike * 100
+                    premium_collected = premium_bid * 100
+                    max_return_on_risk_pct = round((premium_collected / required_capital * 100), 4)
+                    # annualized_return_on_risk_pct = max_return_on_risk_pct * 52
+                    annualized_return_on_risk_pct = round((max_return_on_risk_pct / 365 / daysToExpiration), 4)
+
+                    q_ratio = annualized_return_on_risk_pct
+
+                    line = str.format("{0},{1},dte={2}, bid={3}, q={4}%", underlying_symbol, description, daysToExpiration, premium_bid, q_ratio)
+                    print(line)
+
 
 # chain = client.get_option_chain(
             #     symbol=pos.instrument.underlyingSymbol,

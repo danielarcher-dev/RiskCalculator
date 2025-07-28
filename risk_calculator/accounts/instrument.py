@@ -24,13 +24,16 @@ class Instrument():
 
 
     def parse_occ_symbol(self):
-        match = re.match(r'([A-Z ]{6})(\d{6})([CP])(\d{8})', self.symbol)
+        return self.parse_occ_symbol(self.symbol)
+        
+    def parse_occ_symbol(symbol):
+        match = re.match(r'([A-Z ]{6})(\d{6})([CP])(\d{8})', symbol)
         if not match:
             return None
 
         # root = match.group(1).strip()
         date_str = match.group(2)
-        # option_type = match.group(3)
+        option_type = match.group(3)
         strike_raw = match.group(4)
 
         expiration = datetime.strptime(date_str, '%y%m%d').date()
@@ -39,6 +42,6 @@ class Instrument():
         return {
             # 'root': root,
             'expiration': expiration,
-            # 'type': 'Put' if option_type == 'P' else 'Call',
+            'option_type': Client.Options.ContractType.PUT if option_type == 'P' else Client.Options.ContractType.CALL,
             'strike': strike
         }    

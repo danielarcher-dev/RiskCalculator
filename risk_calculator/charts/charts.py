@@ -159,7 +159,7 @@ class Charts():
             type='candle',
             style='charles',
             returnfig=True,
-            figsize=(18, 8),
+            figsize=(21, 8),
             datetime_format=' %Y-%m-%d',
             xrotation=90,
             title=f"{symbol}, {month} - {year}\n{timeframe}",
@@ -210,8 +210,8 @@ class Charts():
                 scale = (1580 / 1718)
 
                 worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
-                worksheet.insert_image('A31', image2, {'x_scale': scale, 'y_scale': scale})
+                worksheet.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
 
-                worksheet.set_column("A:A", 220) # width not in pixels
-                worksheet.set_column("B:B", 5) # width not in pixels
+                worksheet.set_column("A:A", 199) # width not in pixels
+                worksheet.set_column("B:B", 1) # width not in pixels
 

@@ -36,21 +36,27 @@ class RiskCalculator():
         print(balances.AvailableFunds)
         print(balances.CashReceipts)
 
-        workbook   = xlsxwriter.Workbook('filename.xlsx')
+        workbook   = xlsxwriter.Workbook(acct.risk_calculator_output_file)
+
+        # Accounting number format:
+        acct_fmt = workbook.add_format({
+            'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)'
+        })
 
         rpt = workbook.add_worksheet()
         rpt.set_zoom(135)
         rpt.write('A1', "Cash")
-        rpt.write('B1', balances.CashBalance)
+        rpt.write('B1', balances.CashBalance, acct_fmt)
+        rpt.set_column("B:B", 10.5) # width not in pixels
         rpt.write('A2', "Short Options")
-        rpt.write('B2', balances.ShortOptionMarketValue)
+        rpt.write('B2', balances.ShortOptionMarketValue, acct_fmt)
         rpt.write('A3', "Long Options")
-        rpt.write('B3', balances.LongOptionMarketValue)
+        rpt.write('B3', balances.LongOptionMarketValue, acct_fmt)
 
         rpt.write('D1', "Net Liquidity")
-        rpt.write('E1', balances.LiquidationValue)
+        rpt.write('E1', balances.LiquidationValue, acct_fmt)
         rpt.write('D2', "Max Available for Trade")
-        rpt.write('E2', balances.AvailableFunds)
+        rpt.write('E2', balances.AvailableFunds, acct_fmt)
         
         rpt.write('B5', "Symbol")
         rpt.write('C5', "Quantity")
@@ -68,11 +74,22 @@ class RiskCalculator():
                 line = str.format("{0},{1},{2}", pos.symbol, pos.Quantity, pos.marketValue)
                 # print(line)
                 rpt.write('B{0}'.format(str(row)), pos.symbol)
-                rpt.write('C{0}'.format(str(row)), pos.Quantity)
-                rpt.write('D{0}'.format(str(row)), acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['lastPrice'])
-                rpt.write('E{0}'.format(str(row)), pos.marketValue)
-                rpt.write('F{0}'.format(str(row)), "=C{0}*D{0}".format(str(row)))
-                rpt.write('G{0}'.format(str(row)), pos.averagePrice)
+                rpt.write('C{0}'.format(str(row)), pos.Quantity, acct_fmt)
+                rpt.write('D{0}'.format(str(row)), acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['lastPrice'], acct_fmt)
+                rpt.write('E{0}'.format(str(row)), pos.marketValue, acct_fmt)
+                rpt.write('F{0}'.format(str(row)), "=C{0}*D{0}".format(str(row)), acct_fmt)
+                rpt.write('G{0}'.format(str(row)), pos.averagePrice, acct_fmt)
+
+                row = row+1
+            if(pos.instrument.AssetType == 'OPTION'):
+                line = str.format("{0},{1},{2}", pos.symbol, pos.Quantity, pos.marketValue)
+                # print(line)
+                rpt.write('B{0}'.format(str(row)), pos.symbol)
+                rpt.write('C{0}'.format(str(row)), pos.Quantity, acct_fmt)
+                rpt.write('D{0}'.format(str(row)), acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['lastPrice'], acct_fmt)
+                rpt.write('E{0}'.format(str(row)), pos.marketValue, acct_fmt)
+                rpt.write('F{0}'.format(str(row)), "=C{0}*D{0}".format(str(row)), acct_fmt)
+                rpt.write('G{0}'.format(str(row)), pos.averagePrice, acct_fmt)
 
                 row = row+1
         

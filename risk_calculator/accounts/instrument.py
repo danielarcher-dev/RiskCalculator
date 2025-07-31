@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 import re
 from schwab.client import Client
 class Instrument():
@@ -18,30 +19,30 @@ class Instrument():
             else:
                 self.putCall = item['putCall']
             self.underlyingSymbol = item['underlyingSymbol']
-            occ = self.parse_occ_symbol()
+            occ = self.__parse_occ_symbol__()
             self.expiration = occ["expiration"]
             self.strike = float(occ["strike"])
 
 
-    def parse_occ_symbol(self):
-        return self.parse_occ_symbol(self.symbol)
+    def __parse_occ_symbol__(self):
+        return parse_occ_symbol(self.symbol)
         
-    def parse_occ_symbol(symbol):
-        match = re.match(r'([A-Z ]{6})(\d{6})([CP])(\d{8})', symbol)
-        if not match:
-            return None
+def parse_occ_symbol(symbol):
+    match = re.match(r'([A-Z ]{6})(\d{6})([CP])(\d{8})', symbol)
+    if not match:
+        return None
 
-        # root = match.group(1).strip()
-        date_str = match.group(2)
-        option_type = match.group(3)
-        strike_raw = match.group(4)
+    # root = match.group(1).strip()
+    date_str = match.group(2)
+    option_type = match.group(3)
+    strike_raw = match.group(4)
 
-        expiration = datetime.strptime(date_str, '%y%m%d').date()
-        strike = int(strike_raw) / 1000
+    expiration = datetime.strptime(date_str, '%y%m%d').date()
+    strike = int(strike_raw) / 1000
 
-        return {
-            # 'root': root,
-            'expiration': expiration,
-            'option_type': Client.Options.ContractType.PUT if option_type == 'P' else Client.Options.ContractType.CALL,
-            'strike': strike
-        }    
+    return {
+        # 'root': root,
+        'expiration': expiration,
+        'option_type': Client.Options.ContractType.PUT if option_type == 'P' else Client.Options.ContractType.CALL,
+        'strike': strike
+    }    

@@ -47,13 +47,16 @@ def main():
         # print(pos)
         if(pos.instrument.AssetType == 'OPTION'):
 
-            Options.position_option_chain(acct, pos)
-        
-    Options.get_option_chain(acct, "MSFT", SchwabClient.Client.Options.ContractType.PUT )
+            opt = Options.position_option_chain(acct, pos)
+            line = str.format("{0},{1},dte={2}, bid={3}, mark={4}, q={5}%, mv=${6}", opt.option_symbol, opt.description, opt.daysToExpiration, opt.bid, opt.mark, opt.q_ratio, opt.marketValue)
+            print(line)
+    
+    ticker = "MSFT"
+    Options.get_option_chain(acct, ticker, SchwabClient.Client.Options.ContractType.PUT )
     
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
-    # my_chart = chart.Charts(acct)
+    my_chart = chart.Charts(acct)
     # my_chart.chart_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
 
 

@@ -47,93 +47,6 @@ class Charts():
         df.tail(3)
         return df
 
-    # def my_plot_settings(self, symbol, df, timeframe):
-    #     right_now = datetime.datetime.now()
-    #     month = right_now.strftime("%B")
-    #     year = right_now.year
-
-    #     fig = fplt.figure(figsize=(18, 8), style='charles', tight_layout=True)
-    #     ax1 = fig.add_subplot(3, 1, (1, 2))
-    #     # ax2 = fig.add_subplot(3, 1, 3, sharex=ax1)
-    #     fig.subplots_adjust(hspace=0)
-    #     xticks, xticklabels = [], []
-    #     mth = -1
-    #     for i, dt in enumerate(df.index):
-    #         if dt.dayofweek == 0:
-    #             xticks.append(i)
-    #             if dt.month != mth:
-    #                 mth = dt.month
-    #                 xticklabels.append(datetime.datetime.strftime(dt, '%b %d'))
-    #             else:
-    #                 xticklabels.append(datetime.datetime.strftime(dt, '%d'))
-    #             ax1.set_xticks(xticks)
-    #             ax1.set_xticklabels(xticklabels)
-    #     fplt.plot(
-    #     df,
-    #     type='candle',
-    #     ax=ax1,
-    #     # volume=ax2,
-    #     style='charles',
-    #     axtitle='{0}, {1} - {2}\n{3}'.format(symbol, month, year, timeframe),
-    #     ylabel='Price ($)',
-    #     # show_nontrading=True,
-    #     datetime_format=' %Y-%m-%d',
-    #     xrotation=90,
-    #     # tight_layout=True,
-    #     # savefig=dict(fname='{0}/{1}_chart_{2}.png'.format(self.path, symbol, timeframe), dpi=1200, bbox_inches="tight")
-    #     )
-    #     fig.savefig('{0}/{1}_chart_{2}.png'.format(self.path, symbol, timeframe), dpi=96, bbox_inches="tight")
-        
-    #     # TODO: matplot gives a runtime warning here about too many figures opened, possibly using too much memory unless they are explicitly closed
-    #     # but this implementation doesn't actually have a close method, and isn't currently having memory problems
-
-
-
-    # def my_plot_settings(self, symbol, df, timeframe):
-    #     import datetime
-    #     # import mplfinance.original_flavor as fplt
-    #     import matplotlib.ticker as ticker
-
-    #     right_now = datetime.datetime.now()
-    #     month = right_now.strftime("%B")
-    #     year = right_now.year
-
-    #     fig = fplt.figure(figsize=(18, 8), style='charles', tight_layout=True)
-    #     ax1 = fig.add_subplot(3, 1, (1, 2))
-    #     fig.subplots_adjust(hspace=0)
-
-    #     # Setup $1 gridlines
-    #     ax1.yaxis.set_major_locator(ticker.MultipleLocator(1))  # $1 increments
-    #     ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
-
-    #     xticks, xticklabels = [], []
-    #     mth = -1
-    #     for i, dt in enumerate(df.index):
-    #         if dt.dayofweek == 0:
-    #             xticks.append(i)
-    #             if dt.month != mth:
-    #                 mth = dt.month
-    #                 xticklabels.append(datetime.datetime.strftime(dt, '%b %d'))
-    #             else:
-    #                 xticklabels.append(datetime.datetime.strftime(dt, '%d'))
-    #             ax1.set_xticks(xticks)
-    #             ax1.set_xticklabels(xticklabels)
-
-    #     fplt.plot(
-    #         df,
-    #         type='candle',
-    #         ax=ax1,
-    #         style='charles',
-    #         axtitle=f"{symbol}, {month} - {year}\n{timeframe}",
-    #         ylabel='Price ($)',
-    #         datetime_format=' %Y-%m-%d',
-    #         xrotation=90
-    #     )
-
-    #     fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
-
-
-
     def my_plot_settings(self, symbol, df, timeframe):
         import mplfinance as mpf
         import matplotlib.ticker as ticker
@@ -174,13 +87,10 @@ class Charts():
 
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
-
-
     def date_transform(self, datetime_data):
         timestamp = datetime_data/1000
         return datetime.datetime.fromtimestamp(timestamp)
     
-
     def chart_my_watchlist(self, acct, watchlist_file, chart_file):
         with open(watchlist_file, "r") as json_file:
             watchlist = json.load(json_file) 

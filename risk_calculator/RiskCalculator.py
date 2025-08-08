@@ -1,4 +1,5 @@
-from schwab import auth, client
+from schwab import auth
+from schwab.client import Client
 import json
 import csv
 import conf
@@ -9,119 +10,249 @@ import httpx
 # import accounts.securities_account as sa
 # import accounts.transactions.transaction_data as ta
 import accounts.accounts as accounts
+import accounts.securities_account as sec
+import accounts.position as position
+import accounts.option_chain as Options
+import accounts.orders as Orders
+# import accounts.workbook_formats as workbook_formats
 import datetime
 import xlsxwriter
+from typing import cast
 
 
 class RiskCalculator():
     def __init__(self, securities_account_file=None, transactions_file=None):
         # self.parse_args()
+        
 
-        print("do something")
+        print("doing something")
 
 
         acct = accounts.AccountsLauncher()
-        # acct.run()
+
         balances = acct.SecuritiesAccount.CurrentBalances
-        cash = balances.CashBalance
-        # position_balance = 
-        
-        print("Cash balance: {0}".format(cash))
-        print(balances.LongMarketValue)
-        print(balances.ShortOptionMarketValue)
-        print(balances.LongOptionMarketValue)
 
-        print(cash + balances.LongMarketValue + balances.ShortOptionMarketValue)
-        print(balances.BuyingPower)
-        print(balances.AvailableFunds)
-        print(balances.CashReceipts)
+        with(xlsxwriter.Workbook(acct.risk_calculator_output_file) as workbook):
+            
+            self.write_portfolio(acct, balances, workbook)
+            
 
-        workbook   = xlsxwriter.Workbook(acct.risk_calculator_output_file)
+        print("done something")
 
-        # Accounting number format:
-        acct_fmt = workbook.add_format({
-            'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)'
-        })
 
-        rpt = workbook.add_worksheet()
+
+
+
+
+
+    def write_portfolio(self, acct, balances, workbook):
+        # these castings aren't mandatory, but makes development easier
+        acct = cast(accounts.AccountsLauncher, acct)
+        sec_acct = cast(sec.SecuritiesAccount, acct.SecuritiesAccount)
+
+        workbook.set_size(2620, 1820)
+
+        wbf = self.workbook_formats(workbook)
+        accounting_format = wbf['accounting_format']
+        pct_format = wbf['pct_format']
+        bold_format = wbf['bold_format']
+
+
+        rpt = workbook.add_worksheet("portfolio")
         rpt.set_zoom(135)
         rpt.write('A1', "Cash")
-        rpt.write('B1', balances.CashBalance, acct_fmt)
+        rpt.write('B1', balances.CashBalance, accounting_format)
         rpt.set_column("B:B", 10.5) # width not in pixels
-        rpt.write('A2', "Short Options")
-        rpt.write('B2', balances.ShortOptionMarketValue, acct_fmt)
-        rpt.write('A3', "Long Options")
-        rpt.write('B3', balances.LongOptionMarketValue, acct_fmt)
+        rpt.write('A2', "Long Equity")
+        rpt.write('B2', balances.LongMarketValue, accounting_format)
+        rpt.write('A3', "Short Equity")
+        rpt.write('B3', balances.ShortMarketValue, accounting_format)
+        rpt.write('A4', "Long Options")
+        rpt.write('B4', balances.LongOptionMarketValue, accounting_format)
+        rpt.write('A5', "Short Options")
+        rpt.write('B5', balances.ShortOptionMarketValue, accounting_format)
 
         rpt.write('D1', "Net Liquidity")
-        rpt.write('E1', balances.LiquidationValue, acct_fmt)
+        rpt.write('E1', balances.LiquidationValue, accounting_format)
         rpt.write('D2', "Max Available for Trade")
-        rpt.write('E2', balances.AvailableFunds, acct_fmt)
+        rpt.write('E2', balances.AvailableFunds, accounting_format)
         
-        rpt.write('B5', "Symbol")
-        rpt.write('C5', "Quantity")
-        rpt.write('D5', "LastPrice")
-        rpt.write('E5', "MarketValue")
-        rpt.write('F5', 'Qty * Last Price')
-        rpt.write('G5', 'Average Price')
-
-        print("My stock positions are:")
         row = 6
+        # this will make it much easier to maintain columns
+        col_symbol = 'B'
+        col_quantity = 'C'
+        col_mark = 'D'
+        col_net_liquidity = 'E'
+        # col_qty_times_mark = 'F'
+        col_unrealized_profit_loss = 'F'
+        col_average_price = 'G'
+        col_underlying_price = 'H'
+        col_dte = 'I'
+        col_max_return_on_risk = 'J'
+        col_q_ratio = 'K'
+        col_stop = 'L'
+        col_live_risk_per_share = 'M'
+        col_live_risk = 'N'
+        col_portfolio_pct = 'O'
+        col_maximum_risk = 'P'
         
-        for pos in acct.SecuritiesAccount.Positions:
-            # print(pos)
+        rpt.write('{0}{1}'.format(col_symbol, row), "Symbol")
+        rpt.write('{0}{1}'.format(col_quantity, row), "Quantity")
+        rpt.write('{0}{1}'.format(col_mark, row), "Mark")
+        rpt.write('{0}{1}'.format(col_net_liquidity, row), "Net Liquidity")
+        # rpt.write('{0}{1}'.format(col_qty_times_mark, row), 'Qty * Mark')
+        rpt.write('{0}{1}'.format(col_average_price, row), 'Average Price')
+        rpt.write('{0}{1}'.format(col_underlying_price, row), 'Underlying Price')
+        rpt.write('{0}{1}'.format(col_dte, row), 'DTE')
+        rpt.write('{0}{1}'.format(col_max_return_on_risk, row), 'RoR')
+        rpt.write('{0}{1}'.format(col_q_ratio, row), 'Q Ratio')
+        rpt.write('{0}{1}'.format(col_stop, row), 'Stop')
+        rpt.write('{0}{1}'.format(col_live_risk_per_share, row), 'Live Risk Per Share')
+        rpt.write('{0}{1}'.format(col_live_risk, row), 'Live Risk')
+        rpt.write('{0}{1}'.format(col_portfolio_pct, row), "% of portfolio")
+        rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), "uP&L")
+        rpt.write('{0}{1}'.format(col_maximum_risk, row), 'Max Value at Risk')
+        row = row+1
+        
+
+        total_live_risk = 0
+        sorted_by_symbol = sorted(sec_acct.Positions, key= lambda pos: pos.symbol)
+        for pos in sorted_by_symbol:
+            pos = cast(position.Position, pos)
+
             if(pos.instrument.AssetType == 'EQUITY'):
-                line = str.format("{0},{1},{2}", pos.symbol, pos.Quantity, pos.marketValue)
-                # print(line)
-                rpt.write('B{0}'.format(str(row)), pos.symbol)
-                rpt.write('C{0}'.format(str(row)), pos.Quantity, acct_fmt)
-                rpt.write('D{0}'.format(str(row)), acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['lastPrice'], acct_fmt)
-                rpt.write('E{0}'.format(str(row)), pos.marketValue, acct_fmt)
-                rpt.write('F{0}'.format(str(row)), "=C{0}*D{0}".format(str(row)), acct_fmt)
-                rpt.write('G{0}'.format(str(row)), pos.averagePrice, acct_fmt)
+                mark = acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['mark']
+
+                stopPrice = acct.get_symbol_stop(pos.symbol)
+                # TODO: live_risk_per_share may give nonsensical values for a short position
+                if pos.LongOrShort == "LONG":
+                    live_risk_per_share = (mark - stopPrice)
+                    # TODO: this doesn't take into account real breakeven point, eg. dividends or premiums reducing real cost
+                    unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity
+                elif pos.LongOrShort == "SHORT":
+                    live_risk_per_share = max(0, (stopPrice - mark))
+                    unrealized_profit_loss = (pos.averagePrice - mark) * pos.Quantity
+                live_risk = live_risk_per_share * abs(pos.Quantity)
+                total_live_risk += live_risk
+                live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
+                
+
+                rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
+                rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
+                rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
+                rpt.write('{0}{1}'.format(col_net_liquidity, row), pos.marketValue, accounting_format)
+                # rpt.write('{0}{1}'.format(col_qty_times_mark, row), "=C{0}*D{0}".format(str(row)), accounting_format)
+                rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
+                rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
+                rpt.write('{0}{1}'.format(col_live_risk_per_share, row), live_risk_per_share, accounting_format)
+                rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
+                rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
+                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+                
+                
 
                 row = row+1
             if(pos.instrument.AssetType == 'OPTION'):
-                line = str.format("{0},{1},{2}", pos.symbol, pos.Quantity, pos.marketValue)
-                # print(line)
-                rpt.write('B{0}'.format(str(row)), pos.symbol)
-                rpt.write('C{0}'.format(str(row)), pos.Quantity, acct_fmt)
-                rpt.write('D{0}'.format(str(row)), acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['lastPrice'], acct_fmt)
-                rpt.write('E{0}'.format(str(row)), pos.marketValue, acct_fmt)
-                rpt.write('F{0}'.format(str(row)), "=C{0}*D{0}".format(str(row)), acct_fmt)
-                rpt.write('G{0}'.format(str(row)), pos.averagePrice, acct_fmt)
+                opt = Options.position_option_chain(acct, pos)
+
+                # underlying_mark = acct.client.get_quote(pos.instrument.underlyingSymbol).json()[pos.instrument.underlyingSymbol]['quote']['mark']
+                underlying_mark = acct.get_symbol_quote(pos.instrument.underlyingSymbol, 'mark')
+                underlying_ask =  acct.get_symbol_quote(pos.instrument.underlyingSymbol, 'askPrice')
+                mark = opt.mark # * opt.multiplier
+
+                stopPrice = acct.get_symbol_stop(pos.symbol)
+                # TODO: live_risk_per_share may give nonsensical values for a short position
+
+                    # cash secured put, live_risk is we have to buy at strike,  
+                if pos.LongOrShort == "LONG":
+                    # if long call or long put, live risk is the same
+                    live_risk_per_share = mark - stopPrice
+                    unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity * opt.multiplier
+                
+                elif pos.LongOrShort == "SHORT":
+                    unrealized_profit_loss = (pos.averagePrice - mark) * abs(pos.Quantity) * opt.multiplier
+                    if pos.instrument.putCall == Client.Options.ContractType.CALL:
+                        if acct.is_it_naked(pos, opt):
+                            # on a naked call, I have to buy shares at bid, and sell at strike.
+                            # my risk is # shares * (strike - bid)
+                            live_risk_per_share = (underlying_ask - opt.strikePrice)
+                        else:
+                            # on a covered call, I have to give up my shares. my risk is
+                            # share price above strike price
+                            live_risk_per_share = max(0, (underlying_mark - opt.strikePrice))
+                    elif pos.instrument.putCall == Client.Options.ContractType.PUT:
+                        live_risk_per_share = (opt.strikePrice - stopPrice)
+                live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
+                total_live_risk += live_risk
+                live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
+                
+                # capital_at_risk_per_share = (opt.strikePrice - stopPrice)
+
+
+                rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
+                rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
+                rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
+                rpt.write('{0}{1}'.format(col_net_liquidity, row), opt.marketValue, accounting_format)
+                # rpt.write('{0}{1}'.format(col_qty_times_mark, row), "=C{0}*D{0}".format(str(row)), accounting_format)
+                rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
+                # option columns
+                rpt.write('{0}{1}'.format(col_underlying_price, row), underlying_mark, accounting_format)
+                rpt.write('{0}{1}'.format(col_dte, row), opt.daysToExpiration)
+                # Q Ratio
+                # TODO: I want a measure of whether the remaining premium is worth waiting for
+                rpt.write('{0}{1}'.format(col_max_return_on_risk, row), opt.max_return_on_risk_pct, pct_format)
+                rpt.write('{0}{1}'.format(col_q_ratio, row), opt.annualized_return_on_risk_pct, pct_format)
+                # TODO: I want to show the rate of return for the original contract sale
+                # TODO: I want to show the rate of return for a roll.
+                #   first, find the next available option to roll for
+                #   second, find the bid price for that, and the ask price for the current dte
+                #   third, calculate the difference in premium minus fees
+                #   fourth, calculate the difference in dte
+                #   lastly, we can now calculate the max rate of return
+
+                # Stop
+                rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
+                rpt.write('{0}{1}'.format(col_live_risk_per_share, row), live_risk_per_share, accounting_format)
+                rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
+                # %% of portfolio
+                rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
+                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+
+
 
                 row = row+1
-        
-        # symbol = 'NTB'
-        # row = '5'
-        # rpt.write('B{0}'.format(row), symbol)
-        # rpt.write('C{0}'.format(row), acct.client.get_quote(symbol).json()[symbol]['quote']['lastPrice'])
 
-        # # resp = client.Client.get_instrument_by_cusip("NTB")
-        # resp = acct.client.get_instruments("NTB", acct.client.Instrument.Projection.FUNDAMENTAL).json()
-        # # inst = resp.json()
-        # # print(inst)
-        # print(resp)
-
-        response = acct.client.get_quote("NTB").json()['NTB']['quote']['lastPrice']
-        # ['lastPrice']
-        print(response)
-
-        rpt.write
+        # rpt.write
+        rpt.write('{0}1'.format(col_live_risk), "Total Live Risk", bold_format)
+        rpt.write('{0}2'.format(col_live_risk), total_live_risk, accounting_format)
 
         rpt.autofit()
-        workbook.close()
+        rpt.set_column("B:B", 21) # width not in pixels
+        rpt.set_column("C:Z", 12) # width not in pixels
+        rpt.set_zoom(100)
+
+
+
+    def workbook_formats(self, workbook):
+        accounting_format = workbook.add_format({'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)'})
+        pct_format = workbook.add_format({'num_format': '_(* #,##0.0000_);_(* (#,##0.0000);_(* "-"??_);_(@_)'})
+        bold_format = workbook.add_format({'bold': True})
+
+        return {
+            'accounting_format': accounting_format,
+             'pct_format': pct_format,
+             'bold_format': bold_format
+             }
 
 
     def parse_args(self):
         #todo:
         print("if any arguments, implement this")
     
-    def read_config(self):
-        self.config = conf.get_config()
-        self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
-        self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
+    # def read_config(self):
+    #     self.config = conf.get_config()
+    #     self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
+    #     self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
     
 
 

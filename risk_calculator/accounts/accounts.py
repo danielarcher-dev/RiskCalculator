@@ -8,7 +8,11 @@ from io import StringIO
 import httpx
 import accounts.securities_account as sa
 import accounts.transactions.transaction_data as ta
+import accounts.orders as o
+import accounts.position as Position
+import accounts.option_chain as Options
 import datetime
+from typing import cast
 
 class AccountsLauncher():
     def __init__(self, securities_account_file=None, transactions_file=None):
@@ -23,6 +27,7 @@ class AccountsLauncher():
             # this is a potential failure point. there are other responses than securitiesAccount, which I haven't implemented
             self.SecuritiesAccount = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
             self.Transactions = ta.TransactionData(self.get_account_transactions())
+            self.Orders = o.Orders(self.get_account_orders())
             self.__save__()
 
         if(securities_account_file != None):
@@ -52,6 +57,7 @@ class AccountsLauncher():
         self.config = conf.get_config()
         self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
         self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
+        self.orders_file = self.config['AppConfig']['orders_file'].replace('<date>',str(datetime.date.today()))
         self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
         self.watchlist = self.config['Charting']['watchlist']
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
@@ -97,6 +103,40 @@ class AccountsLauncher():
         assert resp.status_code == httpx.codes.OK
         return resp.json()
 
+    def get_account_orders(self):
+        resp = self.client.get_orders_for_account(self.hash)
+        assert resp.status_code == httpx.codes.OK
+        orders = resp.json()
+        return orders
+
+    def get_symbol_quote(self, symbol, quote_type):
+        result = self.client.get_quote(symbol).json()
+        return result[symbol]['quote'][quote_type]
+
+    def get_symbol_stop(self, symbol):
+        filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
+        stopPrice = 0
+        for order in filter(lambda o: o.status in filter_statuses, self.Orders.Orders):
+            # TODO: figure out how to handle multi leg orders. for now, assume only 1 leg
+            for orderLeg in filter(lambda ol: ol.instrument.symbol == symbol and ol.legId == 1,  order.OrderLegs):
+                # orderLeg = cast(Orders.OrderLeg, orderLeg)
+                stopPrice = order.stopPrice
+        return stopPrice
+
+
+    def is_it_naked(self, position, opt):
+        pos = cast(Position.Position, position)
+        opt = cast(Options.OptionChain, opt)
+
+        shares_required_to_cover = pos.Quantity * opt.multiplier
+        shares_owned = self.SecuritiesAccount.get_symbol_quantity(pos.instrument.underlyingSymbol)
+
+        if shares_owned < shares_required_to_cover:
+            return True
+        else:
+            return False
+
+
     def market_hours(self):
         resp = self.client.get_transactions(self.hash)
         resp = self.client.get_market_hours(markets=client.Client.MarketHours.Market.OPTION)
@@ -111,6 +151,10 @@ class AccountsLauncher():
         # save transactions data to time_dated file
         with open(self.transactions_file, 'w') as json_file:
             json.dump(self.Transactions.TransactionData, json_file)
+
+        # save orders data to time_dated file
+        with open(self.orders_file, 'w') as json_file:
+            json.dump(self.Orders.OrderData, json_file)
 
 
 # if __name__ == '__main__':

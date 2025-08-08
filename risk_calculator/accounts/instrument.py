@@ -7,10 +7,21 @@ class Instrument():
         self.AssetType = item['assetType']
         self.cusip = item['cusip']
         self.symbol = item['symbol']
-        self.netChange = item['netChange']
+        
+        try:
+            self.netChange = item['netChange']
+        except:
+            self.netChange = None
 
         if self.AssetType == "OPTION":
             self.description = item['description']
+            try:
+                self.instrumentId = item['instrumentId']
+                self.optionDeliverables = item['optionDeliverables']
+            except:
+                self.instrumentId = None
+                self.optionDeliverables = None
+
             self.type = item['type']
             if item['putCall'] == 'PUT':
                 self.putCall = Client.Options.ContractType.PUT

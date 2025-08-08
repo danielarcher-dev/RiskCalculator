@@ -175,12 +175,15 @@ class OptionChain:
         self.inTheMoney = item['inTheMoney']
         self.mini = item['mini']
 
-        self.required_capital =  self.strikePrice * self.multiplier
-
         # for my own analysis, premium collected is not based on bid, but based on option cost
         self.premium_collected = self.bid * self.multiplier
-        self.max_return_on_risk_pct = round((self.premium_collected / self.required_capital * 100), 4)
-        self.annualized_return_on_risk_pct = round((self.max_return_on_risk_pct / 365 / self.daysToExpiration), 4)
+        self.required_capital =  (self.strikePrice - self.bid) * self.multiplier
+        self.max_return_on_risk_pct = round(((self.premium_collected / self.required_capital) * 100), 4)
+        if self.daysToExpiration == 0:
+            # this metric makes no sense if dte is zero, annualizing would imply infinite returns
+            self.annualized_return_on_risk_pct = 0
+        else:
+            self.annualized_return_on_risk_pct = round((self.max_return_on_risk_pct * 365 / self.daysToExpiration), 4)
 
         self.q_ratio = self.annualized_return_on_risk_pct
 

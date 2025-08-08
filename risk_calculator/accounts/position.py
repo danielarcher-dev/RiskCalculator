@@ -2,7 +2,8 @@ import accounts.instrument as instrument
 
 class Position():
     def __init__(self, item):
-        
+        # I'm not a market maker, I'm not allowed to be both long and short on the same position, I can only be one or the other.
+        # Therefore, I can safely make the assumption that if I'm short, I'm not long, and if I'm long, I'm not short.
         self.__longQuantity__ = item['longQuantity']
         self.__shortQuantity__ = item['shortQuantity']
         self.averagePrice = item['averagePrice']
@@ -20,7 +21,7 @@ class Position():
 
         if self.__shortQuantity__ > 0:
             self.LongOrShort = 'SHORT'
-            self.Quantity = self.__shortQuantity__
+            self.Quantity = self.__shortQuantity__ * -1
             self.averageShortPrice = item['averageShortPrice']
             self.averagePrice = self.averageShortPrice
             self.taxLotAverageShortPrice = item['taxLotAverageShortPrice']

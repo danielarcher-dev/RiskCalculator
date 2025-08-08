@@ -1,16 +1,22 @@
-#import accounts
-# import httpx
+import httpx
 import json
 import accounts.accounts as accounts
 import accounts.position as position
+import accounts.option_chain as Options
+import accounts.orders as Orders
+# import accounts.orders.Order as Orders
+
 import charts.charts as chart
 import time
 import schwab
+from schwab import client as SchwabClient
 from typing import cast
 import pandas as pd
 import numpy as np
 from io import StringIO
-
+import xlsxwriter
+from datetime import datetime, timedelta
+import re
 
 
 
@@ -30,16 +36,47 @@ def main():
     transaction = acct.Transactions
 
     # high level reporting
-    print_welcome(securities_account, client)
+    # print_welcome(securities_account, client)
+    # print_options(acct)
 
-    acct.market_hours()
+    # acct.market_hours()
 
+    # ticker = "MSFT"
+    # result = client.get_quote(ticker).json()
+    # print(result)
+    # lastPrice = result[ticker]['quote']['lastPrice']
+    # mark = result[ticker]['quote']['mark']
+    # print(lastPrice, mark)
 
-    my_chart = chart.Charts(acct)
+    #chart options
+   
+    
+    
+    # Options.get_option_chain(acct, ticker, SchwabClient.Client.Options.ContractType.PUT )
+    
+    # print_my_watchlist(watchlist_file=acct.watchlist)
 
-    my_chart.print_180_daily('MSFT')
-    # chart.print_180_daily('MSFT', client)
+    # my_chart = chart.Charts(acct)
+    # my_chart.chart_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
 
+    # sorted_by_entry_date = sorted(acct.Orders.Orders, key= lambda OrderList: Order.enteredTime)
+    # for order in acct.Orders.Orders:
+        # if(order["status"] != "EXPIRED"):
+
+    filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
+    # filter_orderId = [1003751347544]
+    # for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
+    # for order in filter(lambda o: o.orderId in filter_orderId, acct.Orders.Orders):
+    for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
+            for orderLeg in filter(lambda ol: ol.instrument.symbol == 'GSL',  order.OrderLegs):
+                orderLeg = cast(Orders.OrderLeg, orderLeg)
+                print("Order ID: {0}".format(order.orderId))
+            
+                print("Symbol: {0}".format(orderLeg.instrument.symbol))
+                print("Quantity: {0}".format(orderLeg.quantity))
+                print("Status: {0}".format(order.status))
+                print("Order Date: {0}".format(order.enteredTime))
+                print('-' * 20)
 
 
 def load_account_file(securities_account_file, transactions_file):
@@ -57,13 +94,13 @@ def print_welcome(securities_account, client):
                 line = str.format("{0}, {1}, {2}, {3}", pos.symbol, pos.Quantity, lastPrice, pos.marketValue)
                 print(line)
 
-def print_options(securities_account):
-        print("My options are:")
-        for pos in securities_account.Positions:
-            # print(pos)
-            if(pos.instrument.AssetType == 'OPTION'):
-                line = str.format("{0},{1},{2}", pos.instrument.description, pos.Quantity, pos.marketValue)
-                print(line)
+def print_options(acct):
+    print("My options are:")
+    for pos in acct.securities_account.Positions:
+        if(pos.instrument.AssetType == 'OPTION'):
+            opt = Options.position_option_chain(acct, pos)
+            line = str.format("{0},{1},dte={2}, bid={3}, mark={4}, q={5}%, mv=${6}", opt.option_symbol, opt.description, opt.daysToExpiration, opt.bid, opt.mark, opt.q_ratio, opt.marketValue)
+            print(line)
 
 def print_transactions(transaction, acct):
         print("My transactions are:")
@@ -106,7 +143,15 @@ def get_last_price(client, symbol):
     df = pd.read_json(StringIO(json.dumps(response.json())))
     price = df[symbol]['regular']['regularMarketLastPrice']
     return price
-     
+
+def print_my_watchlist(watchlist_file):
+    message = "This is my watchlist:"
+    print(message)
+    with open(watchlist_file, "r") as json_file:
+        watchlist = json.load(json_file) 
+    for item in sorted(watchlist["stocks"]):
+         print(item)
+
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

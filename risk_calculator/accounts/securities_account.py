@@ -20,3 +20,9 @@ class SecuritiesAccount():
 
         self.CurrentBalances = current_balances.CurrentBalances(self.securitiesAccount['currentBalances'])
         self.InitialBalances = initial_balances.InitialBalances(self.securitiesAccount['initialBalances'])
+
+    def get_symbol_quantity(self, symbol):
+        for pos in self.Positions:
+            if pos.symbol == symbol:
+                return pos.Quantity
+        return 0

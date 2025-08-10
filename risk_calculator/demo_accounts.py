@@ -57,7 +57,7 @@ def main():
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
     # my_chart = chart.Charts(acct)
-    # my_chart.chart_my_watchlist(acct, watchlist_file=acct.watchlist, chart_file=acct.charts_file)
+    # my_chart.chart_my_watchlist(acct)
 
     # sorted_by_entry_date = sorted(acct.Orders.Orders, key= lambda OrderList: Order.enteredTime)
     # for order in acct.Orders.Orders:

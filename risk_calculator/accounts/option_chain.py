@@ -1,4 +1,4 @@
-from schwab import client as SchwabClient
+from schwab.client import Client
 from datetime import datetime, timedelta
 import json
 import httpx
@@ -28,14 +28,14 @@ def position_option_chain(acct, pos):
     contract_type = pos.instrument.putCall
     strike = pos.instrument.strike
     expiration = pos.instrument.expiration
-    strategy=SchwabClient.Client.Options.Strategy.SINGLE
+    strategy=Client.Options.Strategy.SINGLE
     include_underlying_quote=True
 
     option_chain = get_option_chain(acct, underlying_symbol, contract_type, strike, expiration, strategy, include_underlying_quote)
     option_chain.marketValue = round(option_chain.mark * option_chain.multiplier * pos.Quantity, 4)
     return option_chain
 
-def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expiration=None, strategy=SchwabClient.Client.Options.Strategy.SINGLE, include_underlying_quote=True):
+def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expiration=None, strategy=Client.Options.Strategy.SINGLE, include_underlying_quote=True):
 
     if expiration == None:
         # This section allows me to re-use the main body while simplifying ad-hoc queries
@@ -74,9 +74,9 @@ def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expira
     with open(options_chain_name, 'w') as json_file:
         json.dump(chain_json, json_file)
 
-    if contract_type == SchwabClient.Client.Options.ContractType.PUT:
+    if contract_type == Client.Options.ContractType.PUT:
         ExpDateMap = "putExpDateMap"
-    elif contract_type == SchwabClient.Client.Options.ContractType.CALL:
+    elif contract_type == Client.Options.ContractType.CALL:
         ExpDateMap = "callExpDateMap"
     else:
         # TODO: currently, if we want both PUTs and CALLs, we need to order each one, or implement logic to handle ContractType.ANY
@@ -106,13 +106,13 @@ def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expira
         return chain_list
           
 
-def get_market_value_of_option(acct, underlying_symbol, contract_type, strike=None, expiration=None, strategy=SchwabClient.Client.Options.Strategy.SINGLE, include_underlying_quote=True):
+def get_market_value_of_option(acct, underlying_symbol, contract_type, strike=None, expiration=None, strategy=Client.Options.Strategy.SINGLE, include_underlying_quote=True):
     pos = cast(position.Position, pos)
     underlying_symbol = pos.instrument.underlyingSymbol
     contract_type = pos.instrument.putCall
     strike = pos.instrument.strike
     expiration = pos.instrument.expiration
-    strategy=SchwabClient.Client.Options.Strategy.SINGLE
+    strategy=Client.Options.Strategy.SINGLE
     include_underlying_quote=True
 
     option_chain = get_option_chain(acct, underlying_symbol, contract_type, strike, expiration, strategy, include_underlying_quote)
@@ -123,7 +123,12 @@ def get_market_value_of_option(acct, underlying_symbol, contract_type, strike=No
 class OptionChain:
     def __init__(self, item):
         self.chain = item
-        self.putCall = item['putCall']
+        if item['putCall'] == 'PUT':
+            self.putCall = Client.Options.ContractType.PUT
+        elif item['putCall'] == 'CALL':
+            self.putCall = Client.Options.ContractType.CALL
+        else:
+            self.putCall = item['putCall']
         self.option_symbol = item['symbol']
         self.description = item['description']
         self.bid = item['bid']

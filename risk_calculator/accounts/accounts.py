@@ -1,4 +1,5 @@
-from schwab import auth, client
+from schwab import auth
+from schwab.client import Client
 import json
 import csv
 import conf
@@ -136,10 +137,29 @@ class AccountsLauncher():
         else:
             return False
 
+    def get_break_even_point(self, opt, averagePrice):
+        opt = cast(Options.OptionChain, opt)
+
+        break_even_point = None
+
+        # This calculation doesn't take into account the impact of rolling options for credit or dividends
+        # to solve this, we would have to dig through transactions and orders logs and make some inference
+        if opt.putCall == Client.Options.ContractType.CALL:
+            break_even_point = opt.strikePrice + averagePrice
+        elif opt.putCall == Client.Options.ContractType.PUT:
+            break_even_point = opt.strikePrice - averagePrice
+    
+        return break_even_point
+
+    def open_watchlist(self):
+        watchlist = None
+        with open(self.watchlist_file, "r") as json_file:
+                watchlist = json.load(json_file) 
+        return watchlist
 
     def market_hours(self):
         resp = self.client.get_transactions(self.hash)
-        resp = self.client.get_market_hours(markets=client.Client.MarketHours.Market.OPTION)
+        resp = self.client.get_market_hours(markets=Client.MarketHours.Market.OPTION)
         print(resp.json())
         return None
 

@@ -91,18 +91,24 @@ class Charts():
         timestamp = datetime_data/1000
         return datetime.datetime.fromtimestamp(timestamp)
     
-    def chart_my_watchlist(self, acct, watchlist_file, chart_file):
-        with open(watchlist_file, "r") as json_file:
-            watchlist = json.load(json_file) 
+    def chart_my_watchlist(self, acct, chart_file): 
+        watchlist = acct.open_watchlist()
+        charts_file = acct.charts_file
+        
+        self.export_watchlist(self, watchlist, charts_file)
 
-        # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop
-        # and then writing them to Excel in a second loop
+    def generate_charts(self, watchlist):
         for stock in watchlist['stocks']:
             # we don't actually need the data frames here, we're just interested in the image
             self.print_180_daily(stock)
             self.print_365_weekly(stock)
 
-        with pd.ExcelWriter(chart_file, engine="xlsxwriter") as writer:
+    def export_watchlist(self, watchlist, charts_file):
+        # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop
+        # and then writing them to Excel in a second loop
+        self.generate_charts(watchlist)
+
+        with pd.ExcelWriter(charts_file, engine="xlsxwriter") as writer:
             writer.book.set_size(2620, 1820)
             for stock in sorted(watchlist['stocks']):
                 # abuse a blank data frame to create worksheet

@@ -94,6 +94,9 @@ class RiskCalculator():
             rpt.set_column("B:B", 1) # width not in pixels
 
 
+            # TODO: I want to put, starting on column C1, print out of recent orders, transactions, and stops, as well as key ratios
+            # TODO: I want to put in, if we have a file a notes akin to a journal.
+
 
 
     def write_portfolio(self, acct, balances, workbook):

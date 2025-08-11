@@ -51,32 +51,14 @@ def main():
     #chart options
    
     
-    
-    # Options.get_option_chain(acct, ticker, SchwabClient.Client.Options.ContractType.PUT )
-    
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
-    # my_chart = chart.Charts(acct)
+    my_chart = chart.Charts(acct)
     # my_chart.chart_my_watchlist(acct)
+    my_chart.print_10_day("MSFT")
 
-    # sorted_by_entry_date = sorted(acct.Orders.Orders, key= lambda OrderList: Order.enteredTime)
-    # for order in acct.Orders.Orders:
-        # if(order["status"] != "EXPIRED"):
 
-    filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
-    # filter_orderId = [1003751347544]
-    # for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
-    # for order in filter(lambda o: o.orderId in filter_orderId, acct.Orders.Orders):
-    for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
-            for orderLeg in filter(lambda ol: ol.instrument.symbol == 'GSL',  order.OrderLegs):
-                orderLeg = cast(Orders.OrderLeg, orderLeg)
-                print("Order ID: {0}".format(order.orderId))
-            
-                print("Symbol: {0}".format(orderLeg.instrument.symbol))
-                print("Quantity: {0}".format(orderLeg.quantity))
-                print("Status: {0}".format(order.status))
-                print("Order Date: {0}".format(order.enteredTime))
-                print('-' * 20)
+
 
 
 def load_account_file(securities_account_file, transactions_file):
@@ -152,6 +134,18 @@ def print_my_watchlist(watchlist_file):
     for item in sorted(watchlist["stocks"]):
          print(item)
 
+def print_my_orders(acct):
+    filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
+    for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
+            for orderLeg in filter(lambda ol: ol.instrument.symbol == 'GSL',  order.OrderLegs):
+                orderLeg = cast(Orders.OrderLeg, orderLeg)
+                print("Order ID: {0}".format(order.orderId))
+            
+                print("Symbol: {0}".format(orderLeg.instrument.symbol))
+                print("Quantity: {0}".format(orderLeg.quantity))
+                print("Status: {0}".format(order.status))
+                print("Order Date: {0}".format(order.enteredTime))
+                print('-' * 20)
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

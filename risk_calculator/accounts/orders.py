@@ -24,7 +24,7 @@ class Order():
             self.price = item['price']
         except:
             self.price = None
-            print("{0} has no price, {1}".format(self.orderId, self.orderType))
+            # print("{0} has no price, {1}".format(self.orderId, self.orderType))
         if self.orderType == "STOP":
             self.stopPrice = item['stopPrice']
             self.stopType = item['stopType']
@@ -42,7 +42,7 @@ class Order():
             self.closeTime = item['closeTime']
         except:
             self.closeTime = None
-            print("{0} has no closeTime, {1}".format(self.orderId, self.orderType))
+            # print("{0} has no closeTime, {1}".format(self.orderId, self.orderType))
         self.tag = item['tag']
         self.accountNumber = item['accountNumber']
         # self.orderActivityCollection = item['orderActivityCollection']

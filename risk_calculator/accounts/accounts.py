@@ -65,6 +65,9 @@ class AccountsLauncher():
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today()))
+        self.quote_output_file = self.config['AppConfig']['quote_output_file'].replace('<date>',str(datetime.date.today()))
+        self.price_history_output_file = self.config['AppConfig']['price_history_output_file'].replace('<date>',str(datetime.date.today()))
+        
     
     def get_client(self):
         self.client = conf.get_client()
@@ -128,6 +131,10 @@ class AccountsLauncher():
 
     def get_symbol_quote(self, symbol, quote_type):
         result = self.client.get_quote(symbol).json()
+        save_file = self.quote_output_file.replace("<symbol>", symbol)
+        with open(save_file, 'w') as json_file:
+            json.dump(result, json_file)
+
         return result[symbol]['quote'][quote_type]
 
     def get_symbol_stop(self, symbol):
@@ -139,7 +146,6 @@ class AccountsLauncher():
                 # orderLeg = cast(Orders.OrderLeg, orderLeg)
                 stopPrice = order.stopPrice
         return stopPrice
-
 
     def is_it_naked(self, position, opt):
         pos = cast(Position.Position, position)

@@ -1,7 +1,14 @@
 import mplfinance as fplt
+from schwab.client import Client
 import pandas as pd
 import datetime
 import json
+
+import mplfinance as mpf
+import matplotlib.ticker as ticker
+import matplotlib.dates as mdates
+import datetime
+import numpy as np
 
 class Charts():
     def __init__(self, account):
@@ -9,6 +16,9 @@ class Charts():
         self.client = account.client
         self.path = self.account.config['Charting']['charts_path']
         
+# TODO: abstract away the methods for getting various price histories, and save to file for historical analysis
+# TODO: build charts from downloaded files instead of directly from client api (this will make the code more modular)
+
 
     def print_15_mins(self, symbol):
         # FIXME: there is a bug here, if market is closed when this is run, we will get an error, because the response will have no candles.
@@ -18,6 +28,38 @@ class Charts():
         df = self.price_history_to_dataframe(price_history, "15_mins")
 
         self.my_plot_settings(symbol, df)
+
+    def print_90_day_30_mins(self, symbol):
+        earliest_date = datetime.datetime.now() - datetime.timedelta(days=90)
+        price_history = self.client.get_price_history_every_thirty_minutes(symbol, start_datetime=earliest_date).json()
+
+        df = self.price_history_to_dataframe(price_history, "90_day_30_min")
+
+        self.my_plot_settings(symbol, df)
+
+    def print_10_day(self, symbol):
+        earliest_date = datetime.datetime.now() - datetime.timedelta(days=90)
+
+        period_type = Client.PriceHistory.PeriodType.DAY
+        period = Client.PriceHistory.Period.ONE_DAY
+        frequency_type = Client.PriceHistory.FrequencyType.MINUTE
+        # frequency = Client.PriceHistory.Frequency.EVERY_MINUTE
+    
+        # price_history = self.client.get_price_history(symbol, period_type=period_type, period=period, frequency_type=frequency_type, frequency=frequency).json()
+
+        # save_file = self.account.price_history_output_file.replace("<symbol>", symbol)
+        # with open(save_file, 'w') as json_file:
+        #     json.dump(price_history, json_file)
+
+        frequency = Client.PriceHistory.Frequency.EVERY_FIFTEEN_MINUTES
+        price_history = self.client.get_price_history(symbol, period_type=period_type, period=period, frequency_type=frequency_type, frequency=frequency).json()
+
+        # 'When periodType=day valid values for period are: [1, 2, 3, 4, 5, 10]'
+        # 'When periodType=day valid values for frequencyType are: minute'
+        df = self.price_history_to_dataframe(price_history)
+
+        self.daily_plot_settings(symbol, df, "1_day")        
+        
 
     def print_180_daily(self, symbol):
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=180)
@@ -46,6 +88,50 @@ class Charts():
         df.head(3)
         df.tail(3)
         return df
+
+    def daily_plot_settings(self, symbol, df, timeframe):
+
+
+        # Timestamp for title
+        now = datetime.datetime.now()
+        title_date = f"{now.strftime('%B')} - {now.year}"
+
+        # Compute price range for dynamic vertical grid spacing
+        price_min, price_max = df['low'].min(), df['high'].max()
+        price_range = price_max - price_min
+
+        # Rule of thumb: aim for ~12 horizontal gridlines
+        raw_spacing = np.round(price_range / 12, 1)
+        nice_ticks = [0.5, 1, 2, 5, 10, 20]
+        tick_spacing = min(nice_ticks, key=lambda x: abs(x - raw_spacing))
+
+        # Generate chart and access figure/axes
+        fig, axes = mpf.plot(
+            df,
+            type='candle',
+            style='charles',
+            returnfig=True,
+            figsize=(21, 8),
+            datetime_format=' %Y-%m-%d',
+            xrotation=90,
+            title=f"{symbol}, {title_date}\n{timeframe}",
+            ylabel='Price ($)'
+        )
+
+        ax1 = axes[0]  # Main price axis
+
+        # Apply vertical gridlines (price axis)
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
+
+        # Apply horizontal gridlines (time axis)
+        ax1.xaxis.set_major_locator(mdates.HourLocator(interval=4))
+        # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        # ax1.xaxis.set_minor_locator(mdates.MinuteLocator(interval=15))
+        ax1.grid(True, which='major', axis='x', linestyle=':', color='lightgray', alpha=0.6)
+
+        # Save chart
+        fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
     def my_plot_settings(self, symbol, df, timeframe):
         import mplfinance as mpf
@@ -102,6 +188,7 @@ class Charts():
             # we don't actually need the data frames here, we're just interested in the image
             self.print_180_daily(stock)
             self.print_365_weekly(stock)
+            self.print_10_day(stock)
 
     def export_stocklist(self, stock_list, charts_file):
         # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop

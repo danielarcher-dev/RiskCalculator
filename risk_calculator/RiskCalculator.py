@@ -68,28 +68,30 @@ class RiskCalculator():
 
         mycharts.generate_charts(stock_list)
 
-        with pd.ExcelWriter(charts_file, engine="xlsxwriter") as writer:
-            writer.book.set_size(2620, 1820)
-            for stock in stock_list:
-                # abuse a blank data frame to create worksheet
-                df_blank = pd.DataFrame()
-                df_blank.to_excel(writer, sheet_name=stock)
+        # with pd.ExcelWriter(charts_file, engine="xlsxwriter") as writer:
+        #     writer.book.set_size(2620, 1820)
+        for stock in stock_list:
+            # abuse a blank data frame to create worksheet
+            # df_blank = pd.DataFrame()
+            # df_blank.to_excel(writer, sheet_name=stock)
+            rpt = workbook.add_worksheet(stock)
+            # worksheet = writer.sheets[stock]
+            rpt.set_zoom(100)
 
-                worksheet = writer.sheets[stock]
-                worksheet.set_zoom(100)
+            image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "10_day")
+            image2 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "180_daily")
+            image3 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "365_weekly")
+            
+            # setting the image to fit inside the column width is really wonky
+            # to work around this, I'm setting it just outside my desired width
+            scale = (1580 / 1718)
 
-                image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "180_daily")
-                image2 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "365_weekly")
-                
-                # setting the image to fit inside the column width is really wonky
-                # to work around this, I'm setting it just outside my desired width
-                scale = (1580 / 1718)
+            rpt.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
+            rpt.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
+            rpt.insert_image('A73', image3, {'x_scale': scale, 'y_scale': scale})
 
-                worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
-                worksheet.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
-
-                worksheet.set_column("A:A", 198) # width not in pixels
-                worksheet.set_column("B:B", 1) # width not in pixels
+            rpt.set_column("A:A", 198) # width not in pixels
+            rpt.set_column("B:B", 1) # width not in pixels
 
 
 

@@ -1,5 +1,5 @@
 import configparser
-from schwab import auth, client
+from schwab import auth
 
 def get_config():
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())

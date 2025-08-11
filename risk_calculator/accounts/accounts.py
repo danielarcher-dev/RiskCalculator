@@ -60,9 +60,11 @@ class AccountsLauncher():
         self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
         self.orders_file = self.config['AppConfig']['orders_file'].replace('<date>',str(datetime.date.today()))
         self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
+        self.charts_path = self.config['Charting']['charts_path']
         self.watchlist = self.config['Charting']['watchlist']
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today()))
+        self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today()))
     
     def get_client(self):
         self.client = conf.get_client()
@@ -110,6 +112,20 @@ class AccountsLauncher():
         orders = resp.json()
         return orders
 
+    def get_account_symbols(self):
+        sorted_by_symbol = sorted(self.SecuritiesAccount.Positions, key= lambda pos: pos.symbol)
+
+        portfolio_symbols_list = []
+
+        for pos in sorted_by_symbol:
+            pos = cast(Position.Position, pos)
+            if pos.instrument.AssetType == 'EQUITY':
+                portfolio_symbols_list.append(pos.symbol)
+            elif pos.instrument.AssetType == 'OPTION':
+                portfolio_symbols_list.append(pos.instrument.underlyingSymbol)
+        
+        return sorted(set(portfolio_symbols_list))
+
     def get_symbol_quote(self, symbol, quote_type):
         result = self.client.get_quote(symbol).json()
         return result[symbol]['quote'][quote_type]
@@ -151,11 +167,13 @@ class AccountsLauncher():
     
         return break_even_point
 
-    def open_watchlist(self):
-        watchlist = None
+    def get_watchlist(self):
+        watchlist = []
         with open(self.watchlist_file, "r") as json_file:
-                watchlist = json.load(json_file) 
-        return watchlist
+                result = json.load(json_file)
+                for stock in sorted(result['stocks']):
+                    watchlist.append(stock)
+        return sorted(set(watchlist))
 
     def market_hours(self):
         resp = self.client.get_transactions(self.hash)

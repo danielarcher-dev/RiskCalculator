@@ -92,25 +92,25 @@ class Charts():
         return datetime.datetime.fromtimestamp(timestamp)
     
     def chart_my_watchlist(self, acct, chart_file): 
-        watchlist = acct.open_watchlist()
+        watchlist = acct.get_watchlist()
         charts_file = acct.charts_file
         
-        self.export_watchlist(self, watchlist, charts_file)
+        self.export_stocklist(self, watchlist, charts_file)
 
-    def generate_charts(self, watchlist):
-        for stock in watchlist['stocks']:
+    def generate_charts(self, stock_list):
+        for stock in stock_list:
             # we don't actually need the data frames here, we're just interested in the image
             self.print_180_daily(stock)
             self.print_365_weekly(stock)
 
-    def export_watchlist(self, watchlist, charts_file):
+    def export_stocklist(self, stock_list, charts_file):
         # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop
         # and then writing them to Excel in a second loop
-        self.generate_charts(watchlist)
+        self.generate_charts(stock_list)
 
         with pd.ExcelWriter(charts_file, engine="xlsxwriter") as writer:
             writer.book.set_size(2620, 1820)
-            for stock in sorted(watchlist['stocks']):
+            for stock in stock_list:
                 # abuse a blank data frame to create worksheet
                 df_blank = pd.DataFrame()
                 df_blank.to_excel(writer, sheet_name=stock)
@@ -128,6 +128,6 @@ class Charts():
                 worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
                 worksheet.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
 
-                worksheet.set_column("A:A", 199) # width not in pixels
+                worksheet.set_column("A:A", 198) # width not in pixels
                 worksheet.set_column("B:B", 1) # width not in pixels
 

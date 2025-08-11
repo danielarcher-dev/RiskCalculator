@@ -14,6 +14,7 @@ import accounts.securities_account as sec
 import accounts.position as position
 import accounts.option_chain as Options
 import accounts.orders as Orders
+import charts.charts as Charts
 # import accounts.workbook_formats as workbook_formats
 import datetime
 import xlsxwriter
@@ -33,14 +34,62 @@ class RiskCalculator():
         balances = acct.SecuritiesAccount.CurrentBalances
 
         with(xlsxwriter.Workbook(acct.risk_calculator_output_file) as workbook):
-            
+            workbook.set_size(2620, 1820)
             self.write_portfolio(acct, balances, workbook)
-            
+            self.write_portfolio_charts(acct, workbook)
+
+            self.write_notes(workbook)
+        
+
+
+
 
         print("done something")
 
 
 
+    def write_watchlist(self, acct, workbook):
+        acct = cast(accounts.AccountsLauncher, acct)
+        # sec_acct = cast(sec.SecuritiesAccount, acct.SecuritiesAccount)
+
+        wbf = self.workbook_formats(workbook)
+        accounting_format = wbf['accounting_format']
+        pct_format = wbf['pct_format']
+        bold_format = wbf['bold_format']
+
+        watchlist = acct.get_watchlist()
+
+    def write_portfolio_charts(self, acct, workbook):
+        acct = cast(accounts.AccountsLauncher, acct)
+        stock_list = acct.get_account_symbols()
+        charts_file = acct.risk_calculator_charts_file
+        mycharts = Charts.Charts(acct) # charting also needs acct.client
+        # mycharts.export_stocklist(portfolio_symbols, charts_file)
+
+        mycharts.generate_charts(stock_list)
+
+        with pd.ExcelWriter(charts_file, engine="xlsxwriter") as writer:
+            writer.book.set_size(2620, 1820)
+            for stock in stock_list:
+                # abuse a blank data frame to create worksheet
+                df_blank = pd.DataFrame()
+                df_blank.to_excel(writer, sheet_name=stock)
+
+                worksheet = writer.sheets[stock]
+                worksheet.set_zoom(100)
+
+                image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "180_daily")
+                image2 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "365_weekly")
+                
+                # setting the image to fit inside the column width is really wonky
+                # to work around this, I'm setting it just outside my desired width
+                scale = (1580 / 1718)
+
+                worksheet.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
+                worksheet.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
+
+                worksheet.set_column("A:A", 198) # width not in pixels
+                worksheet.set_column("B:B", 1) # width not in pixels
 
 
 
@@ -49,8 +98,6 @@ class RiskCalculator():
         # these castings aren't mandatory, but makes development easier
         acct = cast(accounts.AccountsLauncher, acct)
         sec_acct = cast(sec.SecuritiesAccount, acct.SecuritiesAccount)
-
-        workbook.set_size(2620, 1820)
 
         wbf = self.workbook_formats(workbook)
         accounting_format = wbf['accounting_format']
@@ -79,27 +126,30 @@ class RiskCalculator():
         
         row = 6
         # this will make it much easier to maintain columns
-        col_symbol = 'B'
-        col_quantity = 'C'
-        col_mark = 'D'
-        col_net_liquidity = 'E'
-        # col_qty_times_mark = 'F'
-        col_unrealized_profit_loss = 'F'
-        col_average_price = 'G'
-        col_underlying_price = 'H'
-        col_dte = 'I'
-        col_max_return_on_risk = 'J'
-        col_q_ratio = 'K'
-        col_stop = 'L'
-        col_live_risk_per_share = 'M'
-        col_live_risk = 'N'
-        col_portfolio_pct = 'O'
-        col_maximum_risk = 'P'
+        col_symbol                  = 'B'
+        col_quantity                = 'C'
+        col_mark                    = 'D'
+        col_net_liquidity           = 'E'
+        col_unrealized_profit_loss  = 'F'
+        col_break_even_point        = 'G'
+        col_average_price           = 'H'
+        col_underlying_price        = 'I'
+        col_dte                     = 'J'
+        col_max_return_on_risk      = 'K'
+        col_q_ratio                 = 'L'
+        col_stop                    = 'M'
+        col_live_risk_per_share     = 'N'
+        col_live_risk               = 'O'
+        col_portfolio_pct           = 'P'
+        col_maximum_risk            = 'Q'
+        # col_qty_times_mark        = 'F'
         
         rpt.write('{0}{1}'.format(col_symbol, row), "Symbol")
         rpt.write('{0}{1}'.format(col_quantity, row), "Quantity")
         rpt.write('{0}{1}'.format(col_mark, row), "Mark")
         rpt.write('{0}{1}'.format(col_net_liquidity, row), "Net Liquidity")
+        rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), "uP&L")
+        rpt.write('{0}{1}'.format(col_break_even_point, row), 'Break Even Point')
         # rpt.write('{0}{1}'.format(col_qty_times_mark, row), 'Qty * Mark')
         rpt.write('{0}{1}'.format(col_average_price, row), 'Average Price')
         rpt.write('{0}{1}'.format(col_underlying_price, row), 'Underlying Price')
@@ -110,8 +160,9 @@ class RiskCalculator():
         rpt.write('{0}{1}'.format(col_live_risk_per_share, row), 'Live Risk Per Share')
         rpt.write('{0}{1}'.format(col_live_risk, row), 'Live Risk')
         rpt.write('{0}{1}'.format(col_portfolio_pct, row), "% of portfolio")
-        rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), "uP&L")
+        
         rpt.write('{0}{1}'.format(col_maximum_risk, row), 'Max Value at Risk')
+        
         row = row+1
         
 
@@ -121,8 +172,8 @@ class RiskCalculator():
             pos = cast(position.Position, pos)
 
             if(pos.instrument.AssetType == 'EQUITY'):
-                mark = acct.client.get_quote(pos.symbol).json()[pos.symbol]['quote']['mark']
-
+                break_even_point = None
+                mark = acct.get_symbol_quote(pos.symbol, 'mark')
                 stopPrice = acct.get_symbol_stop(pos.symbol)
                 # TODO: live_risk_per_share may give nonsensical values for a short position
                 if pos.LongOrShort == "LONG":
@@ -141,20 +192,22 @@ class RiskCalculator():
                 rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
                 rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), pos.marketValue, accounting_format)
+                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+                rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
                 # rpt.write('{0}{1}'.format(col_qty_times_mark, row), "=C{0}*D{0}".format(str(row)), accounting_format)
                 rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
                 rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
                 rpt.write('{0}{1}'.format(col_live_risk_per_share, row), live_risk_per_share, accounting_format)
                 rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
                 rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
-                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+                
                 
                 
 
                 row = row+1
             if(pos.instrument.AssetType == 'OPTION'):
                 opt = Options.position_option_chain(acct, pos)
-
+                break_even_point = None
                 # underlying_mark = acct.client.get_quote(pos.instrument.underlyingSymbol).json()[pos.instrument.underlyingSymbol]['quote']['mark']
                 underlying_mark = acct.get_symbol_quote(pos.instrument.underlyingSymbol, 'mark')
                 underlying_ask =  acct.get_symbol_quote(pos.instrument.underlyingSymbol, 'askPrice')
@@ -180,8 +233,12 @@ class RiskCalculator():
                             # on a covered call, I have to give up my shares. my risk is
                             # share price above strike price
                             live_risk_per_share = max(0, (underlying_mark - opt.strikePrice))
+
                     elif pos.instrument.putCall == Client.Options.ContractType.PUT:
-                        live_risk_per_share = (opt.strikePrice - stopPrice)
+                        live_risk_per_share = opt.strikePrice - stopPrice
+                break_even_point = acct.get_break_even_point(opt, pos.averagePrice)
+
+
                 live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
                 total_live_risk += live_risk
                 live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
@@ -193,6 +250,8 @@ class RiskCalculator():
                 rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
                 rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), opt.marketValue, accounting_format)
+                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+                rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
                 # rpt.write('{0}{1}'.format(col_qty_times_mark, row), "=C{0}*D{0}".format(str(row)), accounting_format)
                 rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
                 # option columns
@@ -222,7 +281,7 @@ class RiskCalculator():
 
                 row = row+1
 
-        # rpt.write
+
         rpt.write('{0}1'.format(col_live_risk), "Total Live Risk", bold_format)
         rpt.write('{0}2'.format(col_live_risk), total_live_risk, accounting_format)
 
@@ -231,6 +290,10 @@ class RiskCalculator():
         rpt.set_column("C:Z", 12) # width not in pixels
         rpt.set_zoom(100)
 
+
+    def write_notes(self, workbook):
+        rpt = workbook.add_worksheet("disclosures")
+        rpt.write('A1', "See disclosures in the config, there are some caveats in the reasonability of the calculations.")
 
 
     def workbook_formats(self, workbook):

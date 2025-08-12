@@ -38,21 +38,39 @@ class Charts():
         self.my_plot_settings(symbol, df)
 
     def print_10_day(self, symbol):
-        earliest_date = datetime.datetime.now() - datetime.timedelta(days=90)
+        # earliest_date = datetime.datetime.now() - datetime.timedelta(days=90)
 
         period_type = Client.PriceHistory.PeriodType.DAY
-        period = Client.PriceHistory.Period.ONE_DAY
+        # period = Client.PriceHistory.Period.ONE_DAY
         frequency_type = Client.PriceHistory.FrequencyType.MINUTE
-        # frequency = Client.PriceHistory.Frequency.EVERY_MINUTE
-    
-        # price_history = self.client.get_price_history(symbol, period_type=period_type, period=period, frequency_type=frequency_type, frequency=frequency).json()
-
-        # save_file = self.account.price_history_output_file.replace("<symbol>", symbol)
-        # with open(save_file, 'w') as json_file:
-        #     json.dump(price_history, json_file)
-
         frequency = Client.PriceHistory.Frequency.EVERY_FIFTEEN_MINUTES
-        price_history = self.client.get_price_history(symbol, period_type=period_type, period=period, frequency_type=frequency_type, frequency=frequency).json()
+    
+        # # price_history = self.client.get_price_history(symbol, period_type=period_type, period=period, frequency_type=frequency_type, frequency=frequency).json()
+
+        # # save_file = self.account.price_history_output_file.replace("<symbol>", symbol)
+        # # with open(save_file, 'w') as json_file:
+        # #     json.dump(price_history, json_file)
+
+        
+        end_date = datetime.datetime.now()
+        start_date = end_date - datetime.timedelta(days=1)
+        
+        price_history = self.client.get_price_history(
+            symbol=symbol,
+            period_type=period_type,         # 'day' allows intraday data
+            frequency_type=frequency_type,   # minute-level granularity
+            frequency=frequency,               # 1-minute intervals
+            start_datetime=start_date,
+            end_datetime=end_date,
+            need_extended_hours_data=False        # Optional: include pre/post-market
+        ).json()
+
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_1_day")
+        with open(save_file, 'w') as json_file:
+            json.dump(price_history, json_file)
+
+
+
 
         # 'When periodType=day valid values for period are: [1, 2, 3, 4, 5, 10]'
         # 'When periodType=day valid values for frequencyType are: minute'
@@ -64,6 +82,10 @@ class Charts():
     def print_180_daily(self, symbol):
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=180)
         price_history = self.client.get_price_history_every_day(symbol, start_datetime=earliest_date).json()
+
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_180_daily")
+        with open(save_file, 'w') as json_file:
+            json.dump(price_history, json_file)
 
         df = self.price_history_to_dataframe(price_history)
 
@@ -82,7 +104,8 @@ class Charts():
     def price_history_to_dataframe(self, price_history):
         df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
         df['datetime'] = df['datetime'].apply(self.date_transform)
-        df = df.set_index('datetime')
+        # df = df.set_index('datetime')
+        df.set_index('datetime', inplace=True)
         df.index.name = 'Date'
         df.shape
         df.head(3)
@@ -90,54 +113,6 @@ class Charts():
         return df
 
     def daily_plot_settings(self, symbol, df, timeframe):
-
-
-        # Timestamp for title
-        now = datetime.datetime.now()
-        title_date = f"{now.strftime('%B')} - {now.year}"
-
-        # Compute price range for dynamic vertical grid spacing
-        price_min, price_max = df['low'].min(), df['high'].max()
-        price_range = price_max - price_min
-
-        # Rule of thumb: aim for ~12 horizontal gridlines
-        raw_spacing = np.round(price_range / 12, 1)
-        nice_ticks = [0.5, 1, 2, 5, 10, 20]
-        tick_spacing = min(nice_ticks, key=lambda x: abs(x - raw_spacing))
-
-        # Generate chart and access figure/axes
-        fig, axes = mpf.plot(
-            df,
-            type='candle',
-            style='charles',
-            returnfig=True,
-            figsize=(21, 8),
-            datetime_format=' %Y-%m-%d',
-            xrotation=90,
-            title=f"{symbol}, {title_date}\n{timeframe}",
-            ylabel='Price ($)'
-        )
-
-        ax1 = axes[0]  # Main price axis
-
-        # Apply vertical gridlines (price axis)
-        ax1.yaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
-        ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
-
-        # Apply horizontal gridlines (time axis)
-        ax1.xaxis.set_major_locator(mdates.HourLocator(interval=4))
-        # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        # ax1.xaxis.set_minor_locator(mdates.MinuteLocator(interval=15))
-        ax1.grid(True, which='major', axis='x', linestyle=':', color='lightgray', alpha=0.6)
-
-        # Save chart
-        fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
-
-    def my_plot_settings(self, symbol, df, timeframe):
-        import mplfinance as mpf
-        import matplotlib.ticker as ticker
-        import datetime
-        import numpy as np
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
@@ -152,7 +127,51 @@ class Charts():
         # Round tick_spacing to nearest "nice" number
         nice_ticks = [0.5, 1, 2, 5, 10, 20]
         tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
+        fig, axes = mpf.plot(
+            df,
+            type='candle',
+            style='charles',
+            returnfig=True,
+            figsize=(21, 8),
+            # datetime_format=' %Y-%m-%d',
+            datetime_format=' %Y-%m-%d %H:%M',
+            xrotation=90,
+            title=f"{symbol}, {month} - {year}\n{timeframe}",
+            ylabel='Price ($)'
+        )
 
+        ax1 = axes[0]
+        ax1.yaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+
+        # these values work ok for 15 minute ticks
+        ax1.xaxis.set_major_locator(ticker.IndexLocator(4,1))
+        ax1.xaxis.set_minor_locator(ticker.IndexLocator(1,1))
+
+
+        # # these values work ok for minute ticks
+        # ax1.xaxis.set_major_locator(ticker.IndexLocator(60,1))
+        # ax1.xaxis.set_minor_locator(ticker.IndexLocator(15,1))
+
+        ax1.grid(True, which='both', axis='y', linestyle='--', color='gray')
+        # ax1.grid(True, which='both', axis='x', linestyle='--', color='gray')
+
+        fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
+
+    def my_plot_settings(self, symbol, df, timeframe):
+        right_now = datetime.datetime.now()
+        month = right_now.strftime("%B")
+        year = right_now.year
+
+        # Compute price range to scale tick spacing
+        price_min, price_max = df['low'].min(), df['high'].max()
+        price_range = price_max - price_min
+
+        # Rule of thumb: 10–15 gridlines max
+        tick_spacing = np.round(price_range / 12, 1)
+
+        # Round tick_spacing to nearest "nice" number
+        nice_ticks = [0.5, 1, 2, 5, 10, 20]
+        tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
         fig, axes = mpf.plot(
             df,
             type='candle',
@@ -160,6 +179,7 @@ class Charts():
             returnfig=True,
             figsize=(21, 8),
             datetime_format=' %Y-%m-%d',
+            # datetime_format=' %Y-%m-%d %H:%M',
             xrotation=90,
             title=f"{symbol}, {month} - {year}\n{timeframe}",
             ylabel='Price ($)'
@@ -169,6 +189,10 @@ class Charts():
 
         # Apply scaled horizontal gridlines
         ax1.yaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        # ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax1.xaxis.set_major_locator(mdates.HourLocator(interval=(24*7)))
+        ax1.xaxis.set_minor_locator(mdates.HourLocator(interval=24))
+
         ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
 
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")

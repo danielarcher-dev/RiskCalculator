@@ -56,6 +56,8 @@ def main():
     my_chart = chart.Charts(acct)
     # my_chart.chart_my_watchlist(acct)
     my_chart.print_10_day("MSFT")
+    my_chart.print_180_daily("MSFT")
+    # my_chart.print_15_mins("MST")
 
 
 

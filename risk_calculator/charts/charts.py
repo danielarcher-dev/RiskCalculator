@@ -42,7 +42,7 @@ class Charts():
 
     def print_1_day_30_minute(self, symbol):
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=1)
+        start_date = end_date - datetime.timedelta(hours=12)
         
         period_type = Client.PriceHistory.PeriodType.DAY
         # period = Client.PriceHistory.Period.ONE_DAY
@@ -139,12 +139,21 @@ class Charts():
         price_min, price_max = df['low'].min(), df['high'].max()
         price_range = price_max - price_min
 
-        # Rule of thumb: 10–15 gridlines max
-        tick_spacing = np.round(price_range / 12, 2)
+        # Determine tick spacing
+        if price_range <= .5:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.01  # one cent
+        elif price_range <= 1:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.02  # two cents
+        elif price_range <= 2:
+            tick_spacing = 0.05
+        else:
+            # Rule of thumb: aim for ~12 gridlines
+            raw_spacing = np.round(price_range / 12, 2)
+            nice_ticks = [0.05, 0.10, 0.25, 0.5, 1, 2, 5, 10, 20]
+            tick_spacing = min(nice_ticks, key=lambda x: abs(x - raw_spacing))
 
-        # Round tick_spacing to nearest "nice" number
-        nice_ticks = [0.05, 0.10, 0.25, 0.5, 1, 2, 5, 10, 20]
-        tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
         fig, axes = mpf.plot(
             df,
             type='candle',
@@ -179,12 +188,21 @@ class Charts():
         price_min, price_max = df['low'].min(), df['high'].max()
         price_range = price_max - price_min
 
-        # Rule of thumb: 10–15 gridlines max
-        tick_spacing = np.round(price_range / 12, 1)
+        # Determine tick spacing
+        if price_range <= .5:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.01  # one cent
+        elif price_range <= 1:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.02  # two cents
+        elif price_range <= 2:
+            tick_spacing = 0.05
+        else:
+            # Rule of thumb: aim for ~12 gridlines
+            raw_spacing = np.round(price_range / 12, 2)
+            nice_ticks = [0.05, 0.10, 0.25, 0.5, 1, 2, 5, 10, 20]
+            tick_spacing = min(nice_ticks, key=lambda x: abs(x - raw_spacing))
 
-        # Round tick_spacing to nearest "nice" number
-        nice_ticks = [0.5, 1, 2, 5, 10, 20]
-        tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
         fig, axes = mpf.plot(
             df,
             type='candle',
@@ -219,12 +237,25 @@ class Charts():
         price_min, price_max = df['low'].min(), df['high'].max()
         price_range = price_max - price_min
 
-        # Rule of thumb: 10–15 gridlines max
-        tick_spacing = np.round(price_range / 12, 1)
+        # Compute price range to scale tick spacing
+        price_min, price_max = df['low'].min(), df['high'].max()
+        price_range = price_max - price_min
 
-        # Round tick_spacing to nearest "nice" number
-        nice_ticks = [0.5, 1, 2, 5, 10, 20]
-        tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
+        # Determine tick spacing
+        if price_range <= .5:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.01  # one cent
+        elif price_range <= 1:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.02  # two cents
+        elif price_range <= 2:
+            tick_spacing = 0.05
+        else:
+            # Rule of thumb: aim for ~12 gridlines
+            raw_spacing = np.round(price_range / 12, 2)
+            nice_ticks = [0.05, 0.10, 0.25, 0.5, 1, 2, 5, 10, 20]
+            tick_spacing = min(nice_ticks, key=lambda x: abs(x - raw_spacing))
+
         fig, axes = mpf.plot(
             df,
             type='candle',
@@ -259,12 +290,21 @@ class Charts():
         price_min, price_max = df['low'].min(), df['high'].max()
         price_range = price_max - price_min
 
-        # Rule of thumb: 10–15 gridlines max
-        tick_spacing = np.round(price_range / 12, 1)
+        # Determine tick spacing
+        if price_range <= .5:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.01  # one cent
+        elif price_range <= 1:
+            # For tight ranges, show granular ticks
+            tick_spacing = 0.02  # two cents
+        elif price_range <= 2:
+            tick_spacing = 0.05
+        else:
+            # Rule of thumb: aim for ~12 gridlines
+            raw_spacing = np.round(price_range / 12, 2)
+            nice_ticks = [0.05, 0.10, 0.25, 0.5, 1, 2, 5, 10, 20]
+            tick_spacing = min(nice_ticks, key=lambda x: abs(x - raw_spacing))
 
-        # Round tick_spacing to nearest "nice" number
-        nice_ticks = [0.5, 1, 2, 5, 10, 20]
-        tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
         fig, axes = mpf.plot(
             df,
             type='candle',

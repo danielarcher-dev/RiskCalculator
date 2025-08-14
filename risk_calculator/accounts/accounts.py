@@ -159,7 +159,7 @@ class AccountsLauncher():
         else:
             return False
 
-    def get_break_even_point(self, opt, averagePrice):
+    def get_option_break_even_point(self, opt, averagePrice):
         opt = cast(Options.OptionChain, opt)
 
         break_even_point = None
@@ -175,7 +175,7 @@ class AccountsLauncher():
 
     def get_watchlist(self):
         watchlist = []
-        with open(self.watchlist_file, "r") as json_file:
+        with open(self.watchlist, "r") as json_file:
                 result = json.load(json_file)
                 for stock in sorted(result['stocks']):
                     watchlist.append(stock)

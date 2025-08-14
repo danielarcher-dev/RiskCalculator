@@ -78,7 +78,7 @@ class RiskCalculator():
             # worksheet = writer.sheets[stock]
             rpt.set_zoom(100)
 
-            image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "10_day")
+            image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "1_day")
             image2 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "180_daily")
             image3 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "365_weekly")
             

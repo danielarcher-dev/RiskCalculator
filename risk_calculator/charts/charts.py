@@ -108,6 +108,10 @@ class Charts():
     def print_365_weekly(self, symbol):
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=366)
         price_history = self.client.get_price_history_every_week(symbol, start_datetime=earliest_date).json()
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_365_week")
+        with open(save_file, 'w') as json_file:
+            json.dump(price_history, json_file)
+
 
         df = self.price_history_to_dataframe(price_history)
 
@@ -136,10 +140,10 @@ class Charts():
         price_range = price_max - price_min
 
         # Rule of thumb: 10–15 gridlines max
-        tick_spacing = np.round(price_range / 12, 1)
+        tick_spacing = np.round(price_range / 12, 2)
 
         # Round tick_spacing to nearest "nice" number
-        nice_ticks = [0.5, 1, 2, 5, 10, 20]
+        nice_ticks = [0.05, 0.10, 0.25, 0.5, 1, 2, 5, 10, 20]
         tick_spacing = min(nice_ticks, key=lambda x: abs(x - tick_spacing))
         fig, axes = mpf.plot(
             df,
@@ -304,7 +308,7 @@ class Charts():
             # we don't actually need the data frames here, we're just interested in the image
             self.print_180_daily(stock)
             self.print_365_weekly(stock)
-            self.print_10_day(stock)
+            self.print_1_day_30_minute(stock)
 
     def export_stocklist(self, stock_list, charts_file):
         # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop

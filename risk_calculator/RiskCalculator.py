@@ -37,7 +37,7 @@ class RiskCalculator():
             workbook.set_size(2620, 1820)
             self.write_portfolio(acct, balances, workbook)
             self.write_portfolio_charts(acct, workbook)
-
+            self.write_watchlist(acct, workbook)
             self.write_notes(workbook)
         
 
@@ -56,6 +56,7 @@ class RiskCalculator():
         accounting_format = wbf['accounting_format']
         pct_format = wbf['pct_format']
         bold_format = wbf['bold_format']
+        # bold_format = wbf['bold_format']
 
         watchlist = acct.get_watchlist()
 
@@ -98,7 +99,6 @@ class RiskCalculator():
             # TODO: I want to put in, if we have a file a notes akin to a journal.
 
 
-
     def write_portfolio(self, acct, balances, workbook):
         # these castings aren't mandatory, but makes development easier
         acct = cast(accounts.AccountsLauncher, acct)
@@ -108,6 +108,8 @@ class RiskCalculator():
         accounting_format = wbf['accounting_format']
         pct_format = wbf['pct_format']
         bold_format = wbf['bold_format']
+        light_green_format = wbf['light_green_format']
+        light_yellow_format = wbf['light_yellow_format']
 
 
         rpt = workbook.add_worksheet("portfolio")
@@ -146,8 +148,10 @@ class RiskCalculator():
         col_live_risk_per_share     = 'N'
         col_live_risk               = 'O'
         col_portfolio_pct           = 'P'
-        col_maximum_risk            = 'Q'
-        # col_qty_times_mark        = 'F'
+        # col_maximum_risk            = 'Q'
+        col_profit_target_1         = 'Q'
+        col_profit_target_2         = 'R'
+        col_profit_target_3         = 'S'
         
         rpt.write('{0}{1}'.format(col_symbol, row), "Symbol")
         rpt.write('{0}{1}'.format(col_quantity, row), "Quantity")
@@ -166,7 +170,10 @@ class RiskCalculator():
         rpt.write('{0}{1}'.format(col_live_risk, row), 'Live Risk')
         rpt.write('{0}{1}'.format(col_portfolio_pct, row), "% of portfolio")
         
-        rpt.write('{0}{1}'.format(col_maximum_risk, row), 'Max Value at Risk')
+        # rpt.write('{0}{1}'.format(col_maximum_risk, row), 'Max Value at Risk')
+        rpt.write('{0}{1}'.format(col_profit_target_1, row), 'Profit Target 1')
+        rpt.write('{0}{1}'.format(col_profit_target_2, row), 'Profit Target 2')
+        rpt.write('{0}{1}'.format(col_profit_target_3, row), 'Profit Target 3')
         
         row = row+1
         
@@ -176,49 +183,36 @@ class RiskCalculator():
         for pos in sorted_by_symbol:
             pos = cast(position.Position, pos)
 
+            # This is where common initializers should go:
+            break_even_point = None
+            stopPrice = acct.get_symbol_stop(pos.symbol)
+
             if(pos.instrument.AssetType == 'EQUITY'):
-                break_even_point = None
+                
                 mark = acct.get_symbol_quote(pos.symbol, 'mark')
-                stopPrice = acct.get_symbol_stop(pos.symbol)
                 # TODO: live_risk_per_share may give nonsensical values for a short position
                 if pos.LongOrShort == "LONG":
                     live_risk_per_share = (mark - stopPrice)
                     # TODO: this doesn't take into account real breakeven point, eg. dividends or premiums reducing real cost
                     unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity
+                    
                 elif pos.LongOrShort == "SHORT":
                     live_risk_per_share = max(0, (stopPrice - mark))
                     unrealized_profit_loss = (pos.averagePrice - mark) * pos.Quantity
+                    
                 live_risk = live_risk_per_share * abs(pos.Quantity)
-                total_live_risk += live_risk
-                live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
-                
-
-                rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
-                rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
-                rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
+                self.profit_targets(acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3)
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), pos.marketValue, accounting_format)
-                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
-                rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
-                # rpt.write('{0}{1}'.format(col_qty_times_mark, row), "=C{0}*D{0}".format(str(row)), accounting_format)
-                rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
-                rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
-                rpt.write('{0}{1}'.format(col_live_risk_per_share, row), live_risk_per_share, accounting_format)
-                rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
-                rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
                 
-                
-                
-
-                row = row+1
             if(pos.instrument.AssetType == 'OPTION'):
                 opt = Options.position_option_chain(acct, pos)
-                break_even_point = None
+
                 # underlying_mark = acct.client.get_quote(pos.instrument.underlyingSymbol).json()[pos.instrument.underlyingSymbol]['quote']['mark']
                 underlying_mark = acct.get_symbol_quote(pos.instrument.underlyingSymbol, 'mark')
                 underlying_ask =  acct.get_symbol_quote(pos.instrument.underlyingSymbol, 'askPrice')
                 mark = opt.mark # * opt.multiplier
 
-                stopPrice = acct.get_symbol_stop(pos.symbol)
+
                 # TODO: live_risk_per_share may give nonsensical values for a short position
 
                     # cash secured put, live_risk is we have to buy at strike,  
@@ -226,9 +220,18 @@ class RiskCalculator():
                     # if long call or long put, live risk is the same
                     live_risk_per_share = mark - stopPrice
                     unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity * opt.multiplier
-                
+
+
+                    profit_target_1 = pos.averagePrice + (pos.averagePrice - stopPrice)
+                    profit_target_2 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 2)
+                    profit_target_3 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 3)
+
                 elif pos.LongOrShort == "SHORT":
                     unrealized_profit_loss = (pos.averagePrice - mark) * abs(pos.Quantity) * opt.multiplier
+                    # TODO: profit targets on short options needs work
+                    profit_target_1 = pos.averagePrice - (stopPrice - pos.averagePrice)
+                    profit_target_2 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 2)
+                    profit_target_3 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 3)
                     if pos.instrument.putCall == Client.Options.ContractType.CALL:
                         if acct.is_it_naked(pos, opt):
                             # on a naked call, I have to buy shares at bid, and sell at strike.
@@ -241,25 +244,12 @@ class RiskCalculator():
 
                     elif pos.instrument.putCall == Client.Options.ContractType.PUT:
                         live_risk_per_share = opt.strikePrice - stopPrice
-                break_even_point = acct.get_break_even_point(opt, pos.averagePrice)
-
+                break_even_point = acct.get_option_break_even_point(opt, pos.averagePrice)
 
                 live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
-                total_live_risk += live_risk
-                live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
-                
                 # capital_at_risk_per_share = (opt.strikePrice - stopPrice)
 
-
-                rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
-                rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
-                rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
-                rpt.write('{0}{1}'.format(col_net_liquidity, row), opt.marketValue, accounting_format)
-                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
-                rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
-                # rpt.write('{0}{1}'.format(col_qty_times_mark, row), "=C{0}*D{0}".format(str(row)), accounting_format)
-                rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
-                # option columns
+                rpt.write('{0}{1}'.format(col_net_liquidity, row), opt.marketValue, accounting_format)                
                 rpt.write('{0}{1}'.format(col_underlying_price, row), underlying_mark, accounting_format)
                 rpt.write('{0}{1}'.format(col_dte, row), opt.daysToExpiration)
                 # Q Ratio
@@ -274,18 +264,30 @@ class RiskCalculator():
                 #   fourth, calculate the difference in dte
                 #   lastly, we can now calculate the max rate of return
 
-                # Stop
-                rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
-                rpt.write('{0}{1}'.format(col_live_risk_per_share, row), live_risk_per_share, accounting_format)
-                rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
-                # %% of portfolio
-                rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
-                rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+                
 
+            # This is where common outputs for both should go:
+            total_live_risk += live_risk
+            live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
 
-
-                row = row+1
-
+            rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
+            rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
+            rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
+            rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+            rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
+            rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
+            rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
+            rpt.write('{0}{1}'.format(col_live_risk_per_share, row), live_risk_per_share, accounting_format)
+            rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
+            rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
+            
+            if stopPrice == None or stopPrice == 0:
+                rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_yellow_format)
+                rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_yellow_format)
+                rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_yellow_format)
+            
+            row = row+1
+                
 
         rpt.write('{0}1'.format(col_live_risk), "Total Live Risk", bold_format)
         rpt.write('{0}2'.format(col_live_risk), total_live_risk, accounting_format)
@@ -294,6 +296,72 @@ class RiskCalculator():
         rpt.set_column("B:B", 21) # width not in pixels
         rpt.set_column("C:Z", 12) # width not in pixels
         rpt.set_zoom(100)
+
+
+    def profit_targets(self, acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3):
+        # these castings aren't mandatory, but makes development easier
+        acct = cast(accounts.AccountsLauncher, acct)
+        sec_acct = cast(sec.SecuritiesAccount, acct.SecuritiesAccount)
+
+        wbf = self.workbook_formats(workbook)
+        accounting_format = wbf['accounting_format']
+        pct_format = wbf['pct_format']
+        bold_format = wbf['bold_format']
+        light_green_format = wbf['light_green_format']
+        light_yellow_format = wbf['light_yellow_format']
+
+        pos = cast(position.Position, pos)
+            # This is where common initializers should go:
+        break_even_point = None
+        stopPrice = acct.get_symbol_stop(pos.symbol)
+
+        if(pos.instrument.AssetType == 'EQUITY'):
+            mark = acct.get_symbol_quote(pos.symbol, 'mark')
+            if pos.LongOrShort == "LONG":
+                if (stopPrice > pos.averageLongPrice):
+                    profit_target_1 = mark + (mark - stopPrice)
+                    profit_target_2 = mark + ((mark - stopPrice) * 2)
+                    profit_target_3 = mark + ((mark - stopPrice) * 3)
+
+                else:
+                    profit_target_1 = pos.averagePrice + (pos.averagePrice - stopPrice)
+                    profit_target_2 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 2)
+                    profit_target_3 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 3)
+
+                if(mark > profit_target_1):
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, accounting_format)
+                if(mark > profit_target_2):
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, accounting_format)
+                if(mark > profit_target_3):
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, accounting_format)
+            elif pos.LongOrShort == "SHORT":
+                if (stopPrice > pos.averageLongPrice):
+                    profit_target_1 = mark - (stopPrice - mark)
+                    profit_target_2 = mark - ((stopPrice - mark) * 2)
+                    profit_target_3 = mark - ((stopPrice - mark) * 3)
+
+                else:
+                    profit_target_1 = pos.averagePrice - (stopPrice - pos.averagePrice)
+                    profit_target_2 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 2)
+                    profit_target_3 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 3)
+                if(mark < profit_target_1):
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, accounting_format)
+                if(mark < profit_target_2):
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, accounting_format)
+                if(mark < profit_target_3):
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, accounting_format)
 
 
     def write_notes(self, workbook):
@@ -305,11 +373,22 @@ class RiskCalculator():
         accounting_format = workbook.add_format({'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)'})
         pct_format = workbook.add_format({'num_format': '_(* #,##0.0000_);_(* (#,##0.0000);_(* "-"??_);_(@_)'})
         bold_format = workbook.add_format({'bold': True})
-
+        light_green_format = workbook.add_format({
+            'bg_color': '#C6EFCE',  # Light green hex
+            'font_color': '#006100', # Optional: dark green text
+            'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)' # accounting format
+        })
+        light_yellow_format = workbook.add_format({
+            'bg_color': '#FFF2CC',     # Light yellow background
+            'font_color': '#7F6000',   # Dark yellow/brownish font
+            'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)' # accounting format
+        })
         return {
             'accounting_format': accounting_format,
              'pct_format': pct_format,
-             'bold_format': bold_format
+             'bold_format': bold_format,
+             'light_green_format': light_green_format,
+             'light_yellow_format': light_yellow_format
              }
 
 

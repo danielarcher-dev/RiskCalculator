@@ -3,7 +3,8 @@ from schwab.client import Client
 import pandas as pd
 import datetime
 import json
-
+from typing import cast
+import accounts.accounts as accounts
 import mplfinance as mpf
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
@@ -12,7 +13,7 @@ import numpy as np
 
 class Charts():
     def __init__(self, account):
-        self.account = account
+        self.account = cast(accounts.AccountsLauncher, account)
         self.client = account.client
         self.path = self.account.config['Charting']['charts_path']
         
@@ -59,13 +60,16 @@ class Charts():
             need_extended_hours_data=False        # Optional: include pre/post-market
         ).json()
 
-        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_1_day")
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_1_day_30_minute")
         with open(save_file, 'w') as json_file:
             json.dump(price_history, json_file)
 
         df = self.price_history_to_dataframe(price_history)
 
-        self.plot_30_minute_candles_settings(symbol, df, "1_day")      
+        # using(self.plot_settings_30_minute_candles(symbol, df, "1_day_30_minute")):
+        #     chart_done = "hello"
+        
+        self.plot_settings_30_minute_candles(symbol, df, "1_day_30_minute")
         
 
     def print_180_daily(self, symbol):
@@ -103,7 +107,7 @@ class Charts():
 
         df = self.price_history_to_dataframe(price_history)
 
-        self.my_plot_settings(symbol, df, "180_daily") 
+        self.plot_settings_default(symbol, df, "180_daily") 
 
     def print_365_weekly(self, symbol):
         earliest_date = datetime.datetime.now() - datetime.timedelta(days=366)
@@ -115,7 +119,7 @@ class Charts():
 
         df = self.price_history_to_dataframe(price_history)
 
-        self.my_plot_settings(symbol, df, "365_weekly")
+        self.plot_settings_default(symbol, df, "365_weekly")
 
         return df
 
@@ -130,7 +134,7 @@ class Charts():
         df.tail(3)
         return df
 
-    def plot_minute_candles_settings(self, symbol, df, timeframe):
+    def plot_settines_minute_candles(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
@@ -179,7 +183,7 @@ class Charts():
 
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
-    def plot_15_minute_candles_settings(self, symbol, df, timeframe):
+    def plot_settings_15_minute_candles(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
@@ -228,7 +232,7 @@ class Charts():
 
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
-    def plot_30_minute_candles_settings(self, symbol, df, timeframe):
+    def plot_settings_30_minute_candles(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
@@ -281,7 +285,7 @@ class Charts():
 
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
-    def my_plot_settings(self, symbol, df, timeframe):
+    def plot_settings_default(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
@@ -322,15 +326,12 @@ class Charts():
 
         # Apply scaled horizontal gridlines
         ax1.yaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
-        # ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
-        # ax1.xaxis.set_major_locator(mdates.HourLocator(interval=(24*7)))
-        # ax1.xaxis.set_minor_locator(mdates.HourLocator(interval=24))
-
         ax1.xaxis.set_major_locator(ticker.IndexLocator(5,0))
         ax1.xaxis.set_minor_locator(mdates.DayLocator())
 
         ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
-
+        self.plot_stop_price(symbol, ax1)
+        self.plot_average_price(symbol, ax1)
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
     def date_transform(self, datetime_data):
@@ -349,6 +350,36 @@ class Charts():
             self.print_180_daily(stock)
             self.print_365_weekly(stock)
             self.print_1_day_30_minute(stock)
+
+    def plot_stop_price(self, symbol, ax1):
+        stop_price = self.account.get_symbol_stop(symbol)
+        if stop_price:
+            # Plot horizontal line for stop price
+            ax1.axhline(
+                y=stop_price,
+                color='red',
+                linestyle='--',
+                linewidth=1.5,
+                label=f'Stop @ ${stop_price:.2f}'
+            )
+
+            # Optional: show legend
+            ax1.legend(loc='lower left')
+
+    def plot_average_price(self, symbol, ax1):
+        average_price = self.account.get_symbol_average_price(symbol)
+        if average_price:
+            # Plot horizontal line for stop price
+            ax1.axhline(
+                y=average_price,
+                color='green',
+                linestyle='--',
+                linewidth=1.5,
+                label=f'Average Price @ ${average_price:.2f}'
+            )
+
+            # Optional: show legend
+            ax1.legend(loc='lower left')
 
     def export_stocklist(self, stock_list, charts_file):
         # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop

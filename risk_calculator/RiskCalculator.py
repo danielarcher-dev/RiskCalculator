@@ -59,6 +59,48 @@ class RiskCalculator():
         # bold_format = wbf['bold_format']
 
         watchlist = acct.get_watchlist()
+        mycharts = Charts.Charts(acct) # charting also needs acct.client
+        # mycharts.export_stocklist(portfolio_symbols, charts_file)
+
+        mycharts.generate_charts(watchlist)
+        # self.generate_charts(watchlist)
+
+        for stock in watchlist:
+            try:
+                rpt = workbook.add_worksheet(stock)
+
+                rpt.set_zoom(100)
+
+                # TODO: I don't like hardcoding the file names here, come back an fix it
+                image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "1_day_30_minute")
+                image2 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "180_daily")
+                image3 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "365_weekly")
+                
+                # setting the image to fit inside the column width is really wonky
+                # to work around this, I'm setting it just outside my desired width
+                scale = (1580 / 1718)
+
+                rpt.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
+                rpt.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
+                rpt.insert_image('A73', image3, {'x_scale': scale, 'y_scale': scale})
+
+                rpt.set_column("A:A", 198) # width not in pixels
+                rpt.set_column("B:B", 4) # width not in pixels
+
+
+                # TODO: I want to put, starting on column C1, print out of recent orders, transactions, and stops, as well as key ratios
+                # TODO: I want to put in, if we have a file a notes akin to a journal.
+
+            except xlsxwriter.exceptions.DuplicateWorksheetName as e:
+                if "Sheetname" in str(e) and "is already in use" in str(e):
+                    print(f"Worksheet '{stock}' already exists — skipping.")
+                else:
+                    raise  # re-raise if it's a different kind of error
+            except xlsxwriter.exceptions.XlsxWriterException as e:
+                if "Worksheet name" in str(e) and "is already in use" in str(e):
+                    print(f"Worksheet '{stock}' already exists — skipping.")
+                else:
+                    raise  # re-raise if it's a different kind of error
 
     def write_portfolio_charts(self, acct, workbook):
         acct = cast(accounts.AccountsLauncher, acct)
@@ -69,17 +111,12 @@ class RiskCalculator():
 
         mycharts.generate_charts(stock_list)
 
-        # with pd.ExcelWriter(charts_file, engine="xlsxwriter") as writer:
-        #     writer.book.set_size(2620, 1820)
         for stock in stock_list:
-            # abuse a blank data frame to create worksheet
-            # df_blank = pd.DataFrame()
-            # df_blank.to_excel(writer, sheet_name=stock)
             rpt = workbook.add_worksheet(stock)
-            # worksheet = writer.sheets[stock]
             rpt.set_zoom(100)
 
-            image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "1_day")
+            # TODO: I don't like hardcoding the file names here, come back an fix it
+            image1 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "1_day_30_minute")
             image2 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "180_daily")
             image3 = "{0}/{1}_chart_{2}.png".format(acct.charts_path, stock, "365_weekly")
             
@@ -92,7 +129,7 @@ class RiskCalculator():
             rpt.insert_image('A73', image3, {'x_scale': scale, 'y_scale': scale})
 
             rpt.set_column("A:A", 198) # width not in pixels
-            rpt.set_column("B:B", 1) # width not in pixels
+            rpt.set_column("B:B", 4) # width not in pixels
 
 
             # TODO: I want to put, starting on column C1, print out of recent orders, transactions, and stops, as well as key ratios
@@ -144,14 +181,15 @@ class RiskCalculator():
         col_dte                     = 'J'
         col_max_return_on_risk      = 'K'
         col_q_ratio                 = 'L'
-        col_stop                    = 'M'
-        col_live_risk_per_share     = 'N'
-        col_live_risk               = 'O'
-        col_portfolio_pct           = 'P'
+        col_csp_remaining_pct       = 'M'
+        col_stop                    = 'N'
+        col_live_risk_per_share     = 'O'
+        col_live_risk               = 'P'
+        col_portfolio_pct           = 'Q'
         # col_maximum_risk            = 'Q'
-        col_profit_target_1         = 'Q'
-        col_profit_target_2         = 'R'
-        col_profit_target_3         = 'S'
+        col_profit_target_1         = 'R'
+        col_profit_target_2         = 'S'
+        col_profit_target_3         = 'T'
         
         rpt.write('{0}{1}'.format(col_symbol, row), "Symbol")
         rpt.write('{0}{1}'.format(col_quantity, row), "Quantity")
@@ -165,6 +203,7 @@ class RiskCalculator():
         rpt.write('{0}{1}'.format(col_dte, row), 'DTE')
         rpt.write('{0}{1}'.format(col_max_return_on_risk, row), 'RoR')
         rpt.write('{0}{1}'.format(col_q_ratio, row), 'Q Ratio')
+        rpt.write('{0}{1}'.format(col_csp_remaining_pct, row), 'CSP Remaining Value')
         rpt.write('{0}{1}'.format(col_stop, row), 'Stop')
         rpt.write('{0}{1}'.format(col_live_risk_per_share, row), 'Live Risk Per Share')
         rpt.write('{0}{1}'.format(col_live_risk, row), 'Live Risk')
@@ -179,13 +218,14 @@ class RiskCalculator():
         
 
         total_live_risk = 0
+        remaining_value = 0
         sorted_by_symbol = sorted(sec_acct.Positions, key= lambda pos: pos.symbol)
         for pos in sorted_by_symbol:
             pos = cast(position.Position, pos)
 
             # This is where common initializers should go:
             break_even_point = None
-            stopPrice = acct.get_symbol_stop(pos.symbol)
+            stopPrice =  acct.get_symbol_stop(pos.symbol) or 0
 
             if(pos.instrument.AssetType == 'EQUITY'):
                 
@@ -201,7 +241,7 @@ class RiskCalculator():
                     unrealized_profit_loss = (pos.averagePrice - mark) * pos.Quantity
                     
                 live_risk = live_risk_per_share * abs(pos.Quantity)
-                self.profit_targets(acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3)
+
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), pos.marketValue, accounting_format)
                 
             if(pos.instrument.AssetType == 'OPTION'):
@@ -221,17 +261,8 @@ class RiskCalculator():
                     live_risk_per_share = mark - stopPrice
                     unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity * opt.multiplier
 
-
-                    profit_target_1 = pos.averagePrice + (pos.averagePrice - stopPrice)
-                    profit_target_2 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 2)
-                    profit_target_3 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 3)
-
                 elif pos.LongOrShort == "SHORT":
                     unrealized_profit_loss = (pos.averagePrice - mark) * abs(pos.Quantity) * opt.multiplier
-                    # TODO: profit targets on short options needs work
-                    profit_target_1 = pos.averagePrice - (stopPrice - pos.averagePrice)
-                    profit_target_2 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 2)
-                    profit_target_3 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 3)
                     if pos.instrument.putCall == Client.Options.ContractType.CALL:
                         if acct.is_it_naked(pos, opt):
                             # on a naked call, I have to buy shares at bid, and sell at strike.
@@ -244,10 +275,13 @@ class RiskCalculator():
 
                     elif pos.instrument.putCall == Client.Options.ContractType.PUT:
                         live_risk_per_share = opt.strikePrice - stopPrice
+                        remaining_value = (mark / pos.averagePrice) * 100
                 break_even_point = acct.get_option_break_even_point(opt, pos.averagePrice)
 
                 live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
                 # capital_at_risk_per_share = (opt.strikePrice - stopPrice)
+
+                
 
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), opt.marketValue, accounting_format)                
                 rpt.write('{0}{1}'.format(col_underlying_price, row), underlying_mark, accounting_format)
@@ -256,6 +290,7 @@ class RiskCalculator():
                 # TODO: I want a measure of whether the remaining premium is worth waiting for
                 rpt.write('{0}{1}'.format(col_max_return_on_risk, row), opt.max_return_on_risk_pct, pct_format)
                 rpt.write('{0}{1}'.format(col_q_ratio, row), opt.annualized_return_on_risk_pct, pct_format)
+                rpt.write('{0}{1}'.format(col_csp_remaining_pct, row), remaining_value, pct_format)
                 # TODO: I want to show the rate of return for the original contract sale
                 # TODO: I want to show the rate of return for a roll.
                 #   first, find the next available option to roll for
@@ -281,11 +316,8 @@ class RiskCalculator():
             rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
             rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
             
-            if stopPrice == None or stopPrice == 0:
-                rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_yellow_format)
-                rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_yellow_format)
-                rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_yellow_format)
-            
+
+            self.profit_targets(acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3)
             row = row+1
                 
 
@@ -313,7 +345,7 @@ class RiskCalculator():
         pos = cast(position.Position, pos)
             # This is where common initializers should go:
         break_even_point = None
-        stopPrice = acct.get_symbol_stop(pos.symbol)
+        stopPrice = acct.get_symbol_stop(pos.symbol) or 0
 
         if(pos.instrument.AssetType == 'EQUITY'):
             mark = acct.get_symbol_quote(pos.symbol, 'mark')
@@ -362,7 +394,57 @@ class RiskCalculator():
                     rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_green_format)
                 else:
                     rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, accounting_format)
+        
+            if stopPrice == None or stopPrice == 0:
+                rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_yellow_format)
+                rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_yellow_format)
+                rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_yellow_format)
+        if(pos.instrument.AssetType == 'OPTION'):
+            opt = Options.position_option_chain(acct, pos)
+            mark = opt.mark # * opt.multiplier
 
+            if pos.LongOrShort == "LONG":
+                profit_target_1 = pos.averagePrice + (pos.averagePrice - stopPrice)
+                profit_target_2 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 2)
+                profit_target_3 = pos.averagePrice + ((pos.averagePrice - stopPrice) * 3)
+
+                if(mark > profit_target_1):
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, accounting_format)
+                if(mark > profit_target_2):
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, accounting_format)
+                if(mark > profit_target_3):
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, accounting_format)
+
+            elif pos.LongOrShort == "SHORT":
+                # TODO: profit targets on short options needs work
+                profit_target_1 = pos.averagePrice - (stopPrice - pos.averagePrice)
+                profit_target_2 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 2)
+                profit_target_3 = pos.averagePrice - ((stopPrice - pos.averagePrice) * 3)
+
+                if(mark < profit_target_1):
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, accounting_format)
+                if(mark < profit_target_2):
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, accounting_format)
+                if(mark < profit_target_3):
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_green_format)
+                else:
+                    rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, accounting_format)
+
+            # if stopPrice == None or stopPrice == 0:
+            #     rpt.write('{0}{1}'.format(col_profit_target_1, row), profit_target_1, light_yellow_format)
+            #     rpt.write('{0}{1}'.format(col_profit_target_2, row), profit_target_2, light_yellow_format)
+            #     rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, light_yellow_format)
+            # else:
 
     def write_notes(self, workbook):
         rpt = workbook.add_worksheet("disclosures")

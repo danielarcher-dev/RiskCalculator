@@ -50,13 +50,21 @@ def main():
 
     #chart options
    
-    
+    #do I have any options for GME?
+    symbolOptions = acct.get_symbol_options("INTC")
+    for pos in symbolOptions:
+        pos = cast(position.Position, pos)
+
+        print(pos.symbol, pos.instrument.strike, pos.LongOrShort, str(pos.instrument.putCall.name))
+
+
+    print_my_orders(acct)
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
-    my_chart = chart.Charts(acct)
+    # my_chart = chart.Charts(acct)
     # my_chart.chart_my_watchlist(acct)
-    my_chart.print_1_day_30_minute("GME")
-    my_chart.print_180_daily("MSFT")
+    # my_chart.print_1_day_30_minute("GME")
+    # my_chart.print_180_daily("MSFT")
     # my_chart.print_15_mins("MST")
 
 
@@ -137,17 +145,30 @@ def print_my_watchlist(watchlist_file):
          print(item)
 
 def print_my_orders(acct):
+    acct = cast(accounts.AccountsLauncher, acct)
     filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
-    for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
-            for orderLeg in filter(lambda ol: ol.instrument.symbol == 'GSL',  order.OrderLegs):
+
+    for pos in acct.SecuritiesAccount.Positions:
+        pos = cast(position.Position, pos)
+
+        for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
+        
+            for orderLeg in filter(lambda ol: ol.instrument.symbol == pos.symbol,  order.OrderLegs):
                 orderLeg = cast(Orders.OrderLeg, orderLeg)
-                print("Order ID: {0}".format(order.orderId))
+                print("{},{},{},{},{}".format(
+                    order.orderId,
+                    orderLeg.instrument.symbol,
+                    orderLeg.quantity,
+                    order.status,
+                    order.enteredTime
+                ))
+                # print("Order ID: {0}".format(order.orderId))
             
-                print("Symbol: {0}".format(orderLeg.instrument.symbol))
-                print("Quantity: {0}".format(orderLeg.quantity))
-                print("Status: {0}".format(order.status))
-                print("Order Date: {0}".format(order.enteredTime))
-                print('-' * 20)
+                # print("Symbol: {0}".format(orderLeg.instrument.symbol))
+                # print("Quantity: {0}".format(orderLeg.quantity))
+                # print("Status: {0}".format(order.status))
+                # print("Order Date: {0}".format(order.enteredTime))
+                # print('-' * 20)
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

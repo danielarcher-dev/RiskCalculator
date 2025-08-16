@@ -13,6 +13,7 @@ class Instrument():
         except:
             self.netChange = None
 
+        self.underlyingSymbol = None
         if self.AssetType == "OPTION":
             self.description = item['description']
             try:

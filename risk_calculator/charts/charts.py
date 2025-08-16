@@ -5,6 +5,7 @@ import datetime
 import json
 from typing import cast
 import accounts.accounts as accounts
+import accounts.position as position
 import mplfinance as mpf
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
@@ -66,23 +67,9 @@ class Charts():
 
         df = self.price_history_to_dataframe(price_history)
 
-        # using(self.plot_settings_30_minute_candles(symbol, df, "1_day_30_minute")):
-        #     chart_done = "hello"
-        
         self.plot_settings_30_minute_candles(symbol, df, "1_day_30_minute")
         
-
     def print_180_daily(self, symbol):
-        # earliest_date = datetime.datetime.now() - datetime.timedelta(days=180)
-        # price_history = self.client.get_price_history_every_day(symbol, start_datetime=earliest_date).json()
-
-        # save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_180_daily")
-        # with open(save_file, 'w') as json_file:
-        #     json.dump(price_history, json_file)
-
-        # df = self.price_history_to_dataframe(price_history)
-
-        # self.my_plot_settings(symbol, df, "180_daily")
         end_date = datetime.datetime.now()
         start_date = end_date - datetime.timedelta(days=180)
         
@@ -134,7 +121,7 @@ class Charts():
         df.tail(3)
         return df
 
-    def plot_settines_minute_candles(self, symbol, df, timeframe):
+    def plot_settings_minute_candles(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
         month = right_now.strftime("%B")
         year = right_now.year
@@ -332,6 +319,7 @@ class Charts():
         ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
         self.plot_stop_price(symbol, ax1)
         self.plot_average_price(symbol, ax1)
+        self.plot_option_strike(symbol, ax1)
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
     def date_transform(self, datetime_data):
@@ -376,6 +364,29 @@ class Charts():
                 linestyle='--',
                 linewidth=1.5,
                 label=f'Average Price @ ${average_price:.2f}'
+            )
+
+            # Optional: show legend
+            ax1.legend(loc='lower left')
+
+    def plot_option_strike(self, symbol, ax1):
+        # stop_price = self.account.get_symbol_stop(symbol)
+
+        symbolOptions = self.account.get_symbol_options(symbol)
+        for pos in symbolOptions:
+            pos = cast(position.Position, pos)
+
+            print(pos.symbol, pos.instrument.strike, pos.LongOrShort, pos.instrument.putCall)
+            strikePrice = pos.instrument.strike
+
+            label = "{0}{1}".format(strikePrice, pos.instrument.putCall.name)
+            # TODO: add some conditions to format the strike lines
+            ax1.axhline(
+                y=strikePrice,
+                color='red',
+                linestyle='--',
+                linewidth=1.5,
+                label=label
             )
 
             # Optional: show legend

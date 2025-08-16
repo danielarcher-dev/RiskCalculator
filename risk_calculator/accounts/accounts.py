@@ -157,6 +157,17 @@ class AccountsLauncher():
                 averagePrice = pos.averagePrice
                 return averagePrice
 
+
+    def get_symbol_options(self, symbol):
+        sorted_by_symbol = sorted(self.SecuritiesAccount.Positions, key= lambda pos: pos.symbol)
+        averagePrice = None
+        symbolOptions = []
+        for pos in sorted_by_symbol:
+            pos = cast(Position.Position, pos)
+            if pos.instrument.underlyingSymbol == symbol:
+                    symbolOptions.append(pos)
+        return symbolOptions
+
     def is_it_naked(self, position, opt):
         pos = cast(Position.Position, position)
         opt = cast(Options.OptionChain, opt)

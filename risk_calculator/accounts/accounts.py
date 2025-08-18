@@ -139,12 +139,13 @@ class AccountsLauncher():
 
     def get_symbol_stop(self, symbol):
         filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
-        stopPrice = None
+        stopPrice = []
         for order in filter(lambda o: o.status in filter_statuses, self.Orders.Orders):
             # TODO: figure out how to handle multi leg orders. for now, assume only 1 leg
             for orderLeg in filter(lambda ol: ol.instrument.symbol == symbol and ol.legId == 1,  order.OrderLegs):
                 # orderLeg = cast(Orders.OrderLeg, orderLeg)
-                stopPrice = order.stopPrice
+                result = {"stopPrice": order.stopPrice, "quantity":order.quantity}
+                stopPrice.append(result)
         return stopPrice
 
     def get_symbol_average_price(self, symbol):

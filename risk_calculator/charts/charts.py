@@ -343,16 +343,17 @@ class Charts():
         stop_price = self.account.get_symbol_stop(symbol)
         if stop_price:
             # Plot horizontal line for stop price
-            ax1.axhline(
-                y=stop_price,
-                color='red',
-                linestyle='--',
-                linewidth=1.5,
-                label=f'Stop @ ${stop_price:.2f}'
-            )
+            for item in stop_price:
+                ax1.axhline(
+                    y=item["stopPrice"],
+                    color='red',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
+                )
 
-            # Optional: show legend
-            ax1.legend(loc='lower left')
+                # Optional: show legend
+                ax1.legend(loc='lower left')
 
     def plot_average_price(self, symbol, ax1):
         average_price = self.account.get_symbol_average_price(symbol)
@@ -379,7 +380,7 @@ class Charts():
             print(pos.symbol, pos.instrument.strike, pos.LongOrShort, pos.instrument.putCall)
             strikePrice = pos.instrument.strike
 
-            label = "{0}{1}".format(strikePrice, pos.instrument.putCall.name)
+            label = "{0} {1}".format(strikePrice, pos.instrument.putCall.name)
             # TODO: add some conditions to format the strike lines
             ax1.axhline(
                 y=strikePrice,

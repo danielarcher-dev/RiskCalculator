@@ -225,7 +225,9 @@ class RiskCalculator():
 
             # This is where common initializers should go:
             break_even_point = None
-            stopPrice =  acct.get_symbol_stop(pos.symbol) or 0
+            # TODO: this is too simplistic, and forgets that there might be multiple lots at different stops
+            # for now, we just grab the first stop (without regard for which order is considered first)
+            stopPrice =  self.get_first_stop(acct, pos.symbol)
 
             if(pos.instrument.AssetType == 'EQUITY'):
                 
@@ -329,6 +331,13 @@ class RiskCalculator():
         rpt.set_column("C:Z", 12) # width not in pixels
         rpt.set_zoom(100)
 
+    def get_first_stop(self, acct, symbol):
+        stopPrice =  acct.get_symbol_stop(symbol)
+        if stopPrice:
+            stopPrice = stopPrice[0]["stopPrice"]
+        else:
+            stopPrice = 0
+        return stopPrice
 
     def profit_targets(self, acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3):
         # these castings aren't mandatory, but makes development easier
@@ -345,7 +354,8 @@ class RiskCalculator():
         pos = cast(position.Position, pos)
             # This is where common initializers should go:
         break_even_point = None
-        stopPrice = acct.get_symbol_stop(pos.symbol) or 0
+        stopPrice = self.get_first_stop(acct, pos.symbol)
+        
 
         if(pos.instrument.AssetType == 'EQUITY'):
             mark = acct.get_symbol_quote(pos.symbol, 'mark')

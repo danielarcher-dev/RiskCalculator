@@ -3,6 +3,8 @@ import json
 import accounts.accounts as accounts
 import accounts.position as position
 import accounts.option_chain as Options
+# import accounts.transactions #.transaction_data as T
+from accounts.transactions import transaction_data, transaction
 import accounts.orders as Orders
 # import accounts.orders.Order as Orders
 
@@ -33,7 +35,7 @@ def main():
     
     
     securities_account = acct.SecuritiesAccount
-    transaction = acct.Transactions
+    transactions = acct.Transactions
 
     # high level reporting
     # print_welcome(securities_account, client)
@@ -51,14 +53,15 @@ def main():
     #chart options
    
     #do I have any options for GME?
-    symbolOptions = acct.get_symbol_options("INTC")
-    for pos in symbolOptions:
-        pos = cast(position.Position, pos)
+    # symbolOptions = acct.get_symbol_options("INTC")
+    # for pos in symbolOptions:
+    #     pos = cast(position.Position, pos)
 
-        print(pos.symbol, pos.instrument.strike, pos.LongOrShort, str(pos.instrument.putCall.name))
+    #     print(pos.symbol, pos.instrument.strike, pos.LongOrShort, str(pos.instrument.putCall.name))
 
 
-    print_my_orders(acct)
+    # print_my_orders(acct)
+    print_transactions(transactions, acct)
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
     # my_chart = chart.Charts(acct)
@@ -94,36 +97,42 @@ def print_options(acct):
             line = str.format("{0},{1},dte={2}, bid={3}, mark={4}, q={5}%, mv=${6}", opt.option_symbol, opt.description, opt.daysToExpiration, opt.bid, opt.mark, opt.q_ratio, opt.marketValue)
             print(line)
 
-def print_transactions(transaction, acct):
+def print_transactions(transactions, acct):
         print("My transactions are:")
-        for tran in transaction.Transactions:
-            default_transaction_history_lookback = int(acct.config['AppConfig']['default_transaction_history_lookback'])
-            earliest_date = datetime.datetime.now() - datetime.timedelta(days=default_transaction_history_lookback)
-            
-            tradeDate = datetime.datetime.fromisoformat(tran.tradeDate)
-            # date
-            if  tradeDate.date() > earliest_date.date():
+        transactions = cast(transaction_data.TransactionData, transactions)
 
+        default_transaction_history_lookback = int(acct.config['AppConfig']['default_transaction_history_lookback'])
+        earliest_date = datetime.now() - timedelta(days=default_transaction_history_lookback)
+        
+
+        for tran in transactions.Transactions:
+            tran = cast(transaction.Transaction, tran)
+            tradeDate = datetime.fromisoformat(tran.tradeDate)    
+            
+            if  tradeDate.date() > earliest_date.date():
+                print(tran.activityId)
                 if tran.type == 'TRADE':
-                        
-                    # print(tradeDate.strftime('%Y-%m-%d %H:%M'))
-                    # line = str.format("{0},{1},{2},{3},{4}", tradeDate.strftime('%Y-%m-%d %H:%M'), tran.activityId, tran.description, tran.type, tran.netAmount)
-                    line = str.format("{0},{1},{2},{3},{4},{5}", tradeDate.date(), tradeDate.time(), tran.type, tran.orderId, tran.description,tran.tradeDate)
+                    print(tran.accountNumber, )
+                    
+                    # print(tran)    
+                    # # print(tradeDate.strftime('%Y-%m-%d %H:%M'))
+                    # # line = str.format("{0},{1},{2},{3},{4}", tradeDate.strftime('%Y-%m-%d %H:%M'), tran.activityId, tran.description, tran.type, tran.netAmount)
+                    # line = str.format("{0},{1},{2},{3},{4},{5}", tradeDate.date(), tradeDate.time(), tran.type, tran.orderId, tran.description,tran.tradeDate)
                 
-                    print(line)
-                    for transferItem in tran.transferItems:
-                        # if(transferItem.
-                        if(transferItem.assetType == 'CURRENCY'):
-                            line = transferItem.feeType, transferItem.amount, transferItem.cost
-                        # line = str.format("{0},{1},{2},{3},{4}", transferItem.assetType,transferItem.symbol,transferItem.description,transferItem.amount,transferItem.feeType)
-                            print(line)
-                        effect = ''
-                        try:
-                            effect = transferItem.positionEffect
-                            print(effect)
-                        except:
-                            print("no effect")
-                else:
+                    # print(line)
+                    # for transferItem in tran.transferItems:
+                    #     # if(transferItem.
+                    #     if(transferItem.assetType == 'CURRENCY'):
+                    #         line = transferItem.feeType, transferItem.amount, transferItem.cost
+                    #     # line = str.format("{0},{1},{2},{3},{4}", transferItem.assetType,transferItem.symbol,transferItem.description,transferItem.amount,transferItem.feeType)
+                    #         print(line)
+                    #     effect = ''
+                    #     try:
+                    #         effect = transferItem.positionEffect
+                    #         print(effect)
+                    #     except:
+                    #         print("no effect")
+                # else:
                     print(tran)
 
 def get_last_price(client, symbol):
@@ -162,13 +171,7 @@ def print_my_orders(acct):
                     order.status,
                     order.enteredTime
                 ))
-                # print("Order ID: {0}".format(order.orderId))
-            
-                # print("Symbol: {0}".format(orderLeg.instrument.symbol))
-                # print("Quantity: {0}".format(orderLeg.quantity))
-                # print("Status: {0}".format(order.status))
-                # print("Order Date: {0}".format(order.enteredTime))
-                # print('-' * 20)
+
 
 if __name__ == '__main__':
     # if RUN_ARGS.getboolean('profile'):

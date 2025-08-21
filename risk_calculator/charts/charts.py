@@ -319,6 +319,7 @@ class Charts():
         ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
         self.plot_stop_price(symbol, ax1)
         self.plot_average_price(symbol, ax1)
+        self.plot_limit_price(symbol, ax1)
         self.plot_option_strike(symbol, ax1)
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
@@ -355,6 +356,22 @@ class Charts():
                 # Optional: show legend
                 ax1.legend(loc='lower left')
 
+    def plot_limit_price(self, symbol, ax1):
+        order_price = self.account.get_symbol_limit(symbol)
+        if order_price:
+            # Plot horizontal line for stop price
+            for item in order_price:
+                ax1.axhline(
+                    y=item["limitPrice"],
+                    color='red',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
+                )
+
+                # Optional: show legend
+                ax1.legend(loc='lower left')
+
     def plot_average_price(self, symbol, ax1):
         average_price = self.account.get_symbol_average_price(symbol)
         if average_price:
@@ -370,6 +387,20 @@ class Charts():
             # Optional: show legend
             ax1.legend(loc='lower left')
 
+        # TODO: this is where order date would be plotted
+            # Convert date to matplotlib float format
+            # date_num = mdates.date2num(target_date)
+            
+            # # Define square size
+            # width = 0.5  # in days
+            # height = 2   # in price units
+
+            # # Create and add the rectangle
+            # rect = Rectangle((date_num - width/2, target_price - height/2),
+            #                 width, height,
+            #                 linewidth=1, edgecolor='red', facecolor='none')
+            # ax.add_patch(rect)
+
     def plot_option_strike(self, symbol, ax1):
         # stop_price = self.account.get_symbol_stop(symbol)
 
@@ -377,7 +408,6 @@ class Charts():
         for pos in symbolOptions:
             pos = cast(position.Position, pos)
 
-            print(pos.symbol, pos.instrument.strike, pos.LongOrShort, pos.instrument.putCall)
             strikePrice = pos.instrument.strike
 
             label = "{0} {1}".format(strikePrice, pos.instrument.putCall.name)

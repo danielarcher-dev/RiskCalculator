@@ -111,6 +111,15 @@ class RiskCalculator():
 
         mycharts.generate_charts(stock_list)
 
+        wbf = self.workbook_formats(workbook)
+        # accounting_format = wbf['accounting_format']
+        # pct_format = wbf['pct_format']
+        # bold_format = wbf['bold_format']
+        # light_green_format = wbf['light_green_format']
+        # light_yellow_format = wbf['light_yellow_format']
+        plain_format = wbf['plain_format']
+        date_format = wbf['date_format']
+
         for stock in stock_list:
             rpt = workbook.add_worksheet(stock)
             rpt.set_zoom(100)
@@ -128,8 +137,45 @@ class RiskCalculator():
             rpt.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
             rpt.insert_image('A73', image3, {'x_scale': scale, 'y_scale': scale})
 
+
+            # rpt.write('C1', balances.ShortOptionMarketValue, accounting_format)
+                # acct = cast(accounts.AccountsLauncher, acct)
+            
+            symbolOrders = acct.get_symbol_orders(stock)
+
+            if symbolOrders:
+                filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
+                row = 1
+                rpt.write('C{0}'.format(row), "Order Id:")
+                rpt.write('D{0}'.format(row), "Order Quantity:")
+                rpt.write('E{0}'.format(row), "Price:")
+                rpt.write('F{0}'.format(row), "Order Type:")
+                rpt.write('G{0}'.format(row), "Status:")
+                rpt.write('H{0}'.format(row), "Entered Time:")
+                row = row+1
+                # for pos in acct.SecuritiesAccount.Positions:
+                #     pos = cast(position.Position, pos)
+
+                for order in acct.get_symbol_orders(stock):
+                # for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
+                
+                    for orderLeg in filter(lambda ol: ol.instrument.symbol == stock,  order.OrderLegs):
+                        orderLeg = cast(Orders.OrderLeg, orderLeg)
+                        enteredTime = datetime.datetime.strptime(order.enteredTime, "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+
+                        rpt.write('C{0}'.format(row), order.orderId, plain_format)
+                        rpt.write('D{0}'.format(row), orderLeg.quantity)
+                        rpt.write('E{0}'.format(row), order.price or order.stopPrice)
+                        rpt.write('F{0}'.format(row), order.orderType)
+                        rpt.write('G{0}'.format(row), order.status)
+                        rpt.write('H{0}'.format(row), enteredTime, date_format)
+                        row = row+5
+
+
+            rpt.autofit()
             rpt.set_column("A:A", 198) # width not in pixels
             rpt.set_column("B:B", 4) # width not in pixels
+            rpt.set_column("H:H", 17) # width not in pixels
 
 
             # TODO: I want to put, starting on column C1, print out of recent orders, transactions, and stops, as well as key ratios
@@ -175,27 +221,29 @@ class RiskCalculator():
         col_mark                    = 'D'
         col_net_liquidity           = 'E'
         col_unrealized_profit_loss  = 'F'
-        col_break_even_point        = 'G'
-        col_average_price           = 'H'
-        col_underlying_price        = 'I'
-        col_dte                     = 'J'
-        col_max_return_on_risk      = 'K'
-        col_q_ratio                 = 'L'
-        col_csp_remaining_pct       = 'M'
-        col_stop                    = 'N'
-        col_live_risk_per_share     = 'O'
-        col_live_risk               = 'P'
-        col_portfolio_pct           = 'Q'
+        col_unrealized_profit_loss_pct  = 'G'
+        col_break_even_point        = 'H'
+        col_average_price           = 'I'
+        col_underlying_price        = 'J'
+        col_dte                     = 'K'
+        col_max_return_on_risk      = 'L'
+        col_q_ratio                 = 'M'
+        col_csp_remaining_pct       = 'N'
+        col_stop                    = 'O'
+        col_live_risk_per_share     = 'P'
+        col_live_risk               = 'Q'
+        col_portfolio_pct           = 'R'
         # col_maximum_risk            = 'Q'
-        col_profit_target_1         = 'R'
-        col_profit_target_2         = 'S'
-        col_profit_target_3         = 'T'
+        col_profit_target_1         = 'S'
+        col_profit_target_2         = 'T'
+        col_profit_target_3         = 'U'
         
         rpt.write('{0}{1}'.format(col_symbol, row), "Symbol")
         rpt.write('{0}{1}'.format(col_quantity, row), "Quantity")
         rpt.write('{0}{1}'.format(col_mark, row), "Mark")
         rpt.write('{0}{1}'.format(col_net_liquidity, row), "Net Liquidity")
         rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), "uP&L")
+        rpt.write('{0}{1}'.format(col_unrealized_profit_loss_pct, row), "uP&L %")
         rpt.write('{0}{1}'.format(col_break_even_point, row), 'Break Even Point')
         # rpt.write('{0}{1}'.format(col_qty_times_mark, row), 'Qty * Mark')
         rpt.write('{0}{1}'.format(col_average_price, row), 'Average Price')
@@ -203,7 +251,7 @@ class RiskCalculator():
         rpt.write('{0}{1}'.format(col_dte, row), 'DTE')
         rpt.write('{0}{1}'.format(col_max_return_on_risk, row), 'RoR')
         rpt.write('{0}{1}'.format(col_q_ratio, row), 'Q Ratio')
-        rpt.write('{0}{1}'.format(col_csp_remaining_pct, row), 'CSP Remaining Value')
+        rpt.write('{0}{1}'.format(col_csp_remaining_pct, row), 'CSP Remaining Pct')
         rpt.write('{0}{1}'.format(col_stop, row), 'Stop')
         rpt.write('{0}{1}'.format(col_live_risk_per_share, row), 'Live Risk Per Share')
         rpt.write('{0}{1}'.format(col_live_risk, row), 'Live Risk')
@@ -218,13 +266,14 @@ class RiskCalculator():
         
 
         total_live_risk = 0
-        remaining_value = 0
+        total_unrealized_profit_loss = 0
         sorted_by_symbol = sorted(sec_acct.Positions, key= lambda pos: pos.symbol)
         for pos in sorted_by_symbol:
             pos = cast(position.Position, pos)
 
             # This is where common initializers should go:
             break_even_point = None
+            remaining_value = 0
             # TODO: this is too simplistic, and forgets that there might be multiple lots at different stops
             # for now, we just grab the first stop (without regard for which order is considered first)
             stopPrice =  self.get_first_stop(acct, pos.symbol)
@@ -305,12 +354,15 @@ class RiskCalculator():
 
             # This is where common outputs for both should go:
             total_live_risk += live_risk
+            total_unrealized_profit_loss += unrealized_profit_loss
             live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
+            unrealized_profit_loss_pct = (unrealized_profit_loss / pos.averagePrice * pos.Quantity) * 100
 
             rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
             rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
             rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
             rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
+            rpt.write('{0}{1}'.format(col_unrealized_profit_loss_pct, row), unrealized_profit_loss_pct, accounting_format)
             rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
             rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
             rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
@@ -325,6 +377,7 @@ class RiskCalculator():
 
         rpt.write('{0}1'.format(col_live_risk), "Total Live Risk", bold_format)
         rpt.write('{0}2'.format(col_live_risk), total_live_risk, accounting_format)
+        rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), total_unrealized_profit_loss, bold_format)
 
         rpt.autofit()
         rpt.set_column("B:B", 21) # width not in pixels
@@ -464,7 +517,9 @@ class RiskCalculator():
     def workbook_formats(self, workbook):
         accounting_format = workbook.add_format({'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)'})
         pct_format = workbook.add_format({'num_format': '_(* #,##0.0000_);_(* (#,##0.0000);_(* "-"??_);_(@_)'})
-        bold_format = workbook.add_format({'bold': True})
+        plain_format = workbook.add_format({'num_format': '0'})
+        date_format = workbook.add_format({'num_format': 'yyyy-mm-dd hh:mm:ss'})
+        bold_format = workbook.add_format({'bold': True, 'num_format': '_(* #,##0.00_);_(* (#,##0.00);_(* "-"??_);_(@_)'})
         light_green_format = workbook.add_format({
             'bg_color': '#C6EFCE',  # Light green hex
             'font_color': '#006100', # Optional: dark green text
@@ -480,7 +535,9 @@ class RiskCalculator():
              'pct_format': pct_format,
              'bold_format': bold_format,
              'light_green_format': light_green_format,
-             'light_yellow_format': light_yellow_format
+             'light_yellow_format': light_yellow_format,
+             'plain_format': plain_format,
+             'date_format': date_format
              }
 
 

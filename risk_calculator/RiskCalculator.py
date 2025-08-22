@@ -196,7 +196,6 @@ class RiskCalculator():
 
 
         rpt = workbook.add_worksheet("portfolio")
-        rpt.set_zoom(135)
         rpt.write('A1', "Cash")
         rpt.write('B1', balances.CashBalance, accounting_format)
         rpt.set_column("B:B", 10.5) # width not in pixels
@@ -382,7 +381,7 @@ class RiskCalculator():
         rpt.autofit()
         rpt.set_column("B:B", 21) # width not in pixels
         rpt.set_column("C:Z", 12) # width not in pixels
-        rpt.set_zoom(100)
+        rpt.set_zoom(135)
 
     def get_first_stop(self, acct, symbol):
         stopPrice =  acct.get_symbol_stop(symbol)

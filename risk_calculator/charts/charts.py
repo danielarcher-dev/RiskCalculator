@@ -17,12 +17,54 @@ class Charts():
         self.account = cast(accounts.AccountsLauncher, account)
         self.client = account.client
         self.path = self.account.config['Charting']['charts_path']
+
+    def generate_charts(self, stock_list):
+        for stock in stock_list:
+            # we don't actually need the data frames here, we're just interested in the image
+            self.print_180_daily(stock)
+            self.print_365_weekly(stock)
+            self.print_1_day_30_minute(stock)
+
+    def get_and_save_price_history(self, symbol, options):
+        save_file = options["save_file"]
+        end_date = options["end_date"]
+        start_date = options["start_date"]
+        period_type = options["period_type"]
+        # period = options["period"]
+        frequency_type = options["frequency_type"]
+        frequency = options["frequency"]
+        extended_hours_data = options["extended_hours_data"]
         
-# TODO: abstract away the methods for getting various price histories, and save to file for historical analysis
-# TODO: build charts from downloaded files instead of directly from client api (this will make the code more modular)
-        # Valid values
-        # 'When periodType=day valid values for period are: [1, 2, 3, 4, 5, 10]'
-        # 'When periodType=day valid values for frequencyType are: minute'
+        price_history = self.client.get_price_history(
+            symbol=symbol,
+            period_type=period_type,
+            frequency_type=frequency_type,
+            frequency=frequency,
+            start_datetime=start_date,
+            end_datetime=end_date,
+            need_extended_hours_data=extended_hours_data
+        ).json()
+
+        with open(save_file, 'w') as json_file:
+            json.dump(price_history, json_file)
+
+    def load_price_history(self, save_file):
+        with open (save_file) as price_history_file:
+                price_history_json = json.load(price_history_file)
+        return price_history_json
+
+    def price_history_to_dataframe(self, save_file):
+            price_history = self.load_price_history(save_file)
+
+            df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
+            df['datetime'] = df['datetime'].apply(self.date_transform)
+            # df = df.set_index('datetime')
+            df.set_index('datetime', inplace=True)
+            df.index.name = 'Date'
+            df.shape
+            df.head(3)
+            df.tail(3)
+            return df
 
 
     # def print_15_mins(self, symbol):
@@ -43,83 +85,62 @@ class Charts():
     #     self.my_plot_settings(symbol, df)
 
     def print_1_day_30_minute(self, symbol):
-        end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(hours=12)
-        
-        period_type = Client.PriceHistory.PeriodType.DAY
-        # period = Client.PriceHistory.Period.ONE_DAY
-        frequency_type = Client.PriceHistory.FrequencyType.MINUTE
-        frequency = Client.PriceHistory.Frequency.EVERY_THIRTY_MINUTES
-
-        price_history = self.client.get_price_history(
-            symbol=symbol,
-            period_type=period_type,         # 'day' allows intraday data
-            frequency_type=frequency_type,   # minute-level granularity
-            frequency=frequency,               # 1-minute intervals
-            start_datetime=start_date,
-            end_datetime=end_date,
-            need_extended_hours_data=False        # Optional: include pre/post-market
-        ).json()
-
-        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_1_day_30_minute")
-        with open(save_file, 'w') as json_file:
-            json.dump(price_history, json_file)
-
-        df = self.price_history_to_dataframe(price_history)
-
-        self.plot_settings_30_minute_candles(symbol, df, "1_day_30_minute")
+         # 1 day 30 minute
+        label = "1_day_30_minute"
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
+        options = {
+            "save_file": save_file,
+            "end_date": datetime.datetime.now(),
+            "start_date": datetime.datetime.now() - datetime.timedelta(hours=12),
+            "period_type": Client.PriceHistory.PeriodType.DAY,                      # 'day' allows intraday data
+            "period": None,
+            "frequency_type": Client.PriceHistory.FrequencyType.MINUTE,             # minute-level granularity
+            "frequency": Client.PriceHistory.Frequency.EVERY_THIRTY_MINUTES,        # 1-minute intervals
+            "extended_hours_data": False                                            # Optional: include pre/post-market
+            }
+        self.get_and_save_price_history(symbol, options)
+        df = self.price_history_to_dataframe(save_file)
+        self.plot_settings_30_minute_candles(symbol, df, label)
         
     def print_180_daily(self, symbol):
-        end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=180)
-        
-        period_type = Client.PriceHistory.PeriodType.MONTH
-        # period = Client.PriceHistory.Period.ONE_DAY
-        frequency_type = Client.PriceHistory.FrequencyType.DAILY
-        frequency = Client.PriceHistory.Frequency.DAILY
-
-        price_history = self.client.get_price_history(
-            symbol=symbol,
-            period_type=period_type,         # 'day' allows intraday data
-            frequency_type=frequency_type,   # minute-level granularity
-            frequency=frequency,               # 1-minute intervals
-            start_datetime=start_date,
-            end_datetime=end_date,
-            need_extended_hours_data=False        # Optional: include pre/post-market
-        ).json()
-
-        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_180_daily")
-        with open(save_file, 'w') as json_file:
-            json.dump(price_history, json_file)
-
-        df = self.price_history_to_dataframe(price_history)
-
-        self.plot_settings_default(symbol, df, "180_daily") 
+        days = 180
+        label = "180_daily"
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
+        options = {
+            "save_file": save_file,
+            "end_date": datetime.datetime.now(),
+            "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
+            "period_type": Client.PriceHistory.PeriodType.MONTH,                    # 'day' allows intraday data
+            "period": None,
+            "frequency_type": Client.PriceHistory.FrequencyType.DAILY,              # minute-level granularity
+            "frequency": Client.PriceHistory.Frequency.DAILY,                       # 1-minute intervals
+            "extended_hours_data": False                                            # Optional: include pre/post-market
+            }
+        self.get_and_save_price_history(symbol, options)
+        df = self.price_history_to_dataframe(save_file)
+        self.plot_settings_default(symbol, df, label) 
 
     def print_365_weekly(self, symbol):
-        earliest_date = datetime.datetime.now() - datetime.timedelta(days=366)
-        price_history = self.client.get_price_history_every_week(symbol, start_datetime=earliest_date).json()
-        save_file = self.account.price_history_output_file.replace("<symbol>", symbol + "_365_week")
-        with open(save_file, 'w') as json_file:
-            json.dump(price_history, json_file)
+        days = 365
+        label = "365_weekly"
+        save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
+        options = {
+            "save_file": save_file,
+            "end_date": datetime.datetime.now(),
+            "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
+            "period_type": Client.PriceHistory.PeriodType.YEAR,                    # 'day' allows intraday data
+            "period": None,
+            "frequency_type": Client.PriceHistory.FrequencyType.WEEKLY,              # minute-level granularity
+            "frequency": Client.PriceHistory.Frequency.WEEKLY,                       # 1-minute intervals
+            "extended_hours_data": False                                            # Optional: include pre/post-market
+            }
+        self.get_and_save_price_history(symbol, options)
+        df = self.price_history_to_dataframe(save_file)
+        self.plot_settings_default(symbol, df, label)
 
+        return
 
-        df = self.price_history_to_dataframe(price_history)
-
-        self.plot_settings_default(symbol, df, "365_weekly")
-
-        return df
-
-    def price_history_to_dataframe(self, price_history):
-        df = pd.DataFrame(price_history['candles'], columns=['open', 'high', 'low', 'close', 'volume', 'datetime'])
-        df['datetime'] = df['datetime'].apply(self.date_transform)
-        # df = df.set_index('datetime')
-        df.set_index('datetime', inplace=True)
-        df.index.name = 'Date'
-        df.shape
-        df.head(3)
-        df.tail(3)
-        return df
+    
 
     def plot_settings_minute_candles(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()
@@ -327,18 +348,13 @@ class Charts():
         timestamp = datetime_data/1000
         return datetime.datetime.fromtimestamp(timestamp)
     
-    def chart_my_watchlist(self, acct, chart_file): 
-        watchlist = acct.get_watchlist()
-        charts_file = acct.charts_file
+    # def chart_my_watchlist(self, acct, chart_file): 
+    #     watchlist = acct.get_watchlist()
+    #     charts_file = acct.charts_file
         
-        self.export_stocklist(self, watchlist, charts_file)
+    #     self.export_stocklist(self, watchlist, charts_file)
 
-    def generate_charts(self, stock_list):
-        for stock in stock_list:
-            # we don't actually need the data frames here, we're just interested in the image
-            self.print_180_daily(stock)
-            self.print_365_weekly(stock)
-            self.print_1_day_30_minute(stock)
+
 
     def plot_stop_price(self, symbol, ax1):
         stop_price = self.account.get_symbol_stop(symbol)

@@ -11,15 +11,26 @@ class Order():
     def __init__(self, item):
         self.Order = item
         self.orderId = item['orderId']
-        self.session = item['session']
-        self.duration = item['duration']
-        self.orderType = item['orderType']
-        self.complexOrderStrategyType = item['complexOrderStrategyType']
-        self.quantity = item['quantity']
-        self.filledQuantity = item['filledQuantity']
-        self.remainingQuantity = item['remainingQuantity']
-        self.requestedDestination = item['requestedDestination']
-        self.destinationLinkName = item['destinationLinkName']
+        try:
+            self.orderType = item['orderType']
+        except:
+            self.orderType = item['orderStrategyType']
+
+        if self.orderType == "OCO":
+            self.session = None
+            self.duration = None
+            print("OCO order needs additional work: {0}".format(item))
+        else:
+            self.session = item['session']
+            self.duration = item['duration']
+            self.complexOrderStrategyType = item['complexOrderStrategyType']
+            self.quantity = item['quantity']
+            self.filledQuantity = item['filledQuantity']
+            self.remainingQuantity = item['remainingQuantity']
+            self.requestedDestination = item['requestedDestination']
+            self.destinationLinkName = item['destinationLinkName']
+            self.OrderLegs = [OrderLeg(leg) for leg in item['orderLegCollection']]
+            self.tag = item['tag']
         try:
             self.price = item['price']
         except:
@@ -32,7 +43,7 @@ class Order():
             self.stopPrice = item['stopPrice']
         except:
             self.stopPrice = 0
-        self.OrderLegs = [OrderLeg(leg) for leg in item['orderLegCollection']]
+            
         self.orderStrategyType = item['orderStrategyType']
         self.cancelable = item['cancelable']
         self.editable = item['editable']
@@ -43,7 +54,7 @@ class Order():
         except:
             self.closeTime = None
             # print("{0} has no closeTime, {1}".format(self.orderId, self.orderType))
-        self.tag = item['tag']
+        
         self.accountNumber = item['accountNumber']
         # self.orderActivityCollection = item['orderActivityCollection']
         try:

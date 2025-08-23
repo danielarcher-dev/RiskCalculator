@@ -349,7 +349,7 @@ class Charts():
         return datetime.datetime.fromtimestamp(timestamp)
     
     # def chart_my_watchlist(self, acct, chart_file): 
-    #     watchlist = acct.get_watchlist()
+    #     watchlist = acct.watchlist
     #     charts_file = acct.charts_file
         
     #     self.export_stocklist(self, watchlist, charts_file)

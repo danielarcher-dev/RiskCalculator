@@ -17,22 +17,25 @@ def main():
     # r.raise_for_status()
     # print(json.dumps(r.json(), indent=4))
 
-    # r2 = c.get_instruments('AAPL,MSFT,GME,NTB',c.Instrument.Projection.FUNDAMENTAL)
+    r2 = c.get_instruments('AAPL,MSFT,GME,NTB',c.Instrument.Projection.FUNDAMENTAL)
     # r2 = c.get_instruments('MSFT',c.Instrument.Projection.FUNDAMENTAL)
-    # r2.raise_for_status()
-    # df = pd.read_json(json.dumps(r2.json()))
-    # print(df)
-    # print(df['instruments'][0]['fundamental']['symbol'])
+    r2.raise_for_status()
+    df = pd.read_json(json.dumps(r2.json()))
+    print(df)
+    print(df['instruments'][0]['fundamental']['symbol'])
     
+    save_file = "fundamentals.json"
+    with open(save_file, 'w') as json_file:
+        json.dump(r2.json(), json_file)
     # in_memory_file = StringIO()
 
-    r3 = c.get_quote('MSFT')
-    r3.raise_for_status()
-    # print(r3.json())
-    df3 = pd.read_json(json.dumps(r3.json()))
-    print(df3)
-    price = df3['MSFT']['regular']['regularMarketLastPrice']
-    print(price)
+    # r3 = c.get_quote('MSFT')
+    # r3.raise_for_status()
+    # # print(r3.json())
+    # df3 = pd.read_json(json.dumps(r3.json()))
+    # print(df3)
+    # price = df3['MSFT']['regular']['regularMarketLastPrice']
+    # print(price)
 
     # c.get_price_history('MSFT')
     # streaming.StreamClient.login()

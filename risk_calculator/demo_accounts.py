@@ -64,6 +64,19 @@ def main():
     print_transactions(transactions, acct)
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
+    watchlist = acct.watchlist
+    r2 = client.get_instruments(watchlist,client.Instrument.Projection.FUNDAMENTAL)
+    # r2 = c.get_instruments('MSFT',c.Instrument.Projection.FUNDAMENTAL)
+    r2.raise_for_status()
+    df = pd.read_json(json.dumps(r2.json()))
+    print(df)
+    print(df['instruments'][0]['fundamental']['symbol'])
+    
+    save_file = "fundamentals.json"
+    with open(save_file, 'w') as json_file:
+        json.dump(r2.json(), json_file)
+
+
     # my_chart = chart.Charts(acct)
     # my_chart.chart_my_watchlist(acct)
     # my_chart.print_1_day_30_minute("GME")

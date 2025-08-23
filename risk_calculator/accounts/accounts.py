@@ -61,7 +61,8 @@ class AccountsLauncher():
         self.orders_file = self.config['AppConfig']['orders_file'].replace('<date>',str(datetime.date.today()))
         self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
         self.charts_path = self.config['Charting']['charts_path']
-        self.watchlist = self.config['Charting']['watchlist']
+        self.watchlist_file = self.config['Charting']['watchlist']
+        self.watchlist = self.get_watchlist(self.watchlist_file)
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today()))
@@ -178,7 +179,6 @@ class AccountsLauncher():
                 averagePrice = pos.averagePrice
                 return averagePrice
 
-
     def get_symbol_options(self, symbol):
         sorted_by_symbol = sorted(self.SecuritiesAccount.Positions, key= lambda pos: pos.symbol)
         averagePrice = None
@@ -217,7 +217,7 @@ class AccountsLauncher():
 
     def get_watchlist(self):
         watchlist = []
-        with open(self.watchlist, "r") as json_file:
+        with open(self.watchlist_file, "r") as json_file:
                 result = json.load(json_file)
                 for stock in sorted(result['stocks']):
                     watchlist.append(stock)

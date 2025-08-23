@@ -38,6 +38,22 @@ class RiskCalculator():
             self.write_portfolio(acct, balances, workbook)
             self.write_portfolio_charts(acct, workbook)
             self.write_watchlist(acct, workbook)
+
+
+            # r2 = c.get_instruments('AAPL,MSFT,GME,NTB',c.Instrument.Projection.FUNDAMENTAL)
+            # # r2 = c.get_instruments('MSFT',c.Instrument.Projection.FUNDAMENTAL)
+            # r2.raise_for_status()
+            # df = pd.read_json(json.dumps(r2.json()))
+            # print(df)
+            # print(df['instruments'][0]['fundamental']['symbol'])
+            
+            # save_file = "fundamentals.json"
+            # with open(save_file, 'w') as json_file:
+            #     json.dump(r2.json(), json_file)
+
+
+
+
             self.write_notes(workbook)
         
 
@@ -58,7 +74,7 @@ class RiskCalculator():
         bold_format = wbf['bold_format']
         # bold_format = wbf['bold_format']
 
-        watchlist = acct.get_watchlist()
+        watchlist = acct.watchlist
         mycharts = Charts.Charts(acct) # charting also needs acct.client
         # mycharts.export_stocklist(portfolio_symbols, charts_file)
 

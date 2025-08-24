@@ -62,7 +62,7 @@ class AccountsLauncher():
         self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
         self.charts_path = self.config['Charting']['charts_path']
         self.watchlist_file = self.config['Charting']['watchlist']
-        self.watchlist = self.get_watchlist(self.watchlist_file)
+        self.watchlist = self.get_watchlist()
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today()))

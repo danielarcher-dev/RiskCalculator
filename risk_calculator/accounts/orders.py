@@ -19,7 +19,8 @@ class Order():
         if self.orderType == "OCO":
             self.session = None
             self.duration = None
-            print("OCO order needs additional work: {0}".format(item))
+            # TODO: ("OCO order needs additional work: {0}".format(item))
+            print("OCO order needs additional work: {0}".format(self.orderId))
         else:
             self.session = item['session']
             self.duration = item['duration']

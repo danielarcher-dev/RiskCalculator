@@ -13,12 +13,17 @@ class Fundamentals():
             fundamental = Fundamental(item)
             self.Fundamentals.append(fundamental)
 
+    def to_df(self):
+        records = [stock.to_dict() for stock in self.Fundamentals]
+        df = pd.DataFrame.from_records(records, index='symbol')
+        return df
+
     def save_fundamentals_to_file(self, save_file):
         with open(save_file, 'w') as json_file:
                 json.dump([stock.to_dict() for stock in self.Fundamentals], json_file, indent=2)
 
-        df = pd.DataFrame([stock.to_dict() for stock in self.Fundamentals])
-        df.to_csv(save_file.replace(".json", ".csv"), index=False)
+        df = self.to_df()
+        df.to_csv(save_file.replace(".json", ".csv"), index=True)
 
 class Fundamental():
     def __init__(self, item):

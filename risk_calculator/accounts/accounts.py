@@ -255,11 +255,8 @@ class AccountsLauncher():
             result = self.client.get_instruments(batch, self.client.Instrument.Projection.FUNDAMENTAL)
             result.raise_for_status()
             instruments = result.json()["instruments"]
-            # for item in instruments:
-            #     fundamental = Fundamentals.Fundamental(item)
-            #     fundamentals.append(fundamental)
             self.Fundamentals.add_fundamentals(instruments)
-        
+
         self.Fundamentals.save_fundamentals_to_file(self.fundamentals_output_file)
         
         return self.Fundamentals

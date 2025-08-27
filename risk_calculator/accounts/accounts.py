@@ -69,6 +69,11 @@ class AccountsLauncher():
         self.quote_output_file = self.config['AppConfig']['quote_output_file'].replace('<date>',str(datetime.date.today()))
         self.price_history_output_file = self.config['AppConfig']['price_history_output_file'].replace('<date>',str(datetime.date.today()))
         
+        self.sp500_file = self.config['AppConfig']['index_file'].replace("<index>", "sp500")
+        self.nyse_file = self.config['AppConfig']['index_file'].replace("<index>", "nyse")
+        self.nasdaq_file = self.config['AppConfig']['index_file'].replace("<index>", "nasdaq")
+        self.amex_file = self.config['AppConfig']['index_file'].replace("<index>", "amex")
+        self.fundamentals_output_file = self.config['AppConfig']['fundamentals_output_file'].replace('<date>',str(datetime.date.today()))
     
     def get_client(self):
         self.client = conf.get_client()
@@ -161,12 +166,17 @@ class AccountsLauncher():
         return limitPrice
     
     def get_symbol_orders(self, symbol):
+        # TODO: optimization: download my orders, process them. then index them based on my positions and watchlist
+        # I should only have to parse orders.json once, not every single time for every single symbol
         filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
         symbolOrders = []
         for order in filter(lambda o: o.status in filter_statuses, self.Orders.Orders):
             # TODO: figure out how to handle multi leg orders. for now, assume only 1 leg
-            for orderLeg in filter(lambda ol: ol.instrument.symbol == symbol and ol.legId == 1,  order.OrderLegs):
-                symbolOrders.append(order)
+            try:
+                for orderLeg in filter(lambda ol: ol.instrument.symbol == symbol and ol.legId == 1,  order.OrderLegs):
+                    symbolOrders.append(order)
+            except:
+                print("This order has no legs: {0}".format(order.Order))
         return symbolOrders
 
     def get_symbol_average_price(self, symbol):

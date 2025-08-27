@@ -6,6 +6,7 @@ import accounts.option_chain as Options
 # import accounts.transactions #.transaction_data as T
 from accounts.transactions import transaction_data, transaction
 import accounts.orders as Orders
+import accounts.fundamentals as Fundamentals
 # import accounts.orders.Order as Orders
 
 import charts.charts as chart
@@ -33,9 +34,9 @@ def main():
     # transactions_file = './data/transactions_file_2025-05-02.json'
     # acct = load_account_file(securities_account_file=securities_account_file, transactions_file=transactions_file)
     
-    
-    securities_account = acct.SecuritiesAccount
-    transactions = acct.Transactions
+    # securities_account = acct.SecuritiesAccount
+    # transactions = acct.Transactions
+
 
     # high level reporting
     # print_welcome(securities_account, client)
@@ -61,20 +62,50 @@ def main():
 
 
     # print_my_orders(acct)
-    print_transactions(transactions, acct)
+    # print_transactions(transactions, acct)
     # print_my_watchlist(watchlist_file=acct.watchlist)
 
     watchlist = acct.watchlist
-    r2 = client.get_instruments(watchlist,client.Instrument.Projection.FUNDAMENTAL)
-    # r2 = c.get_instruments('MSFT',c.Instrument.Projection.FUNDAMENTAL)
-    r2.raise_for_status()
-    df = pd.read_json(json.dumps(r2.json()))
-    print(df)
-    print(df['instruments'][0]['fundamental']['symbol'])
+    with open(acct.sp500_file, "r") as file:
+            result = json.load(file)
+            for object in result:
+                watchlist.append(object["Symbol"])
+
+    watchlist = list(set(watchlist))
+
+    fundamentals = get_fundamentals_batched(client, watchlist)
     
-    save_file = "fundamentals.json"
+    for item in fundamentals:
+        print(item.data)
+    
+    save_file = acct.fundamentals_output_file
     with open(save_file, 'w') as json_file:
-        json.dump(r2.json(), json_file)
+        json.dump([stock.to_dict() for stock in fundamentals], json_file, indent=2)
+
+    df = pd.DataFrame([stock.to_dict() for stock in fundamentals])
+    df.to_csv(save_file.replace(".json", ".csv"), index=False)
+
+
+def chunked(lst, size):
+    for i in range(0, len(lst), size):
+        yield lst[i:i + size]
+
+def get_fundamentals_batched(client, watchlist, batch_size=100):
+    watchlist = sorted(watchlist)
+    
+    fundamentals = []
+
+    for batch in chunked(watchlist, batch_size):
+        result = client.get_instruments(batch, client.Instrument.Projection.FUNDAMENTAL)
+        result.raise_for_status()
+        instruments = result.json()["instruments"]
+        for item in instruments:
+            fundamental = Fundamentals.Fundamental(item)
+            fundamentals.append(fundamental)
+    return fundamentals
+
+
+# Usage
 
 
     # my_chart = chart.Charts(acct)

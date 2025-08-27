@@ -172,7 +172,7 @@ class RiskCalculator():
                 # for pos in acct.SecuritiesAccount.Positions:
                 #     pos = cast(position.Position, pos)
 
-                for order in acct.get_symbol_orders(stock):
+                for order in symbolOrders:
                 # for order in filter(lambda o: o.status in filter_statuses, acct.Orders.Orders):
                 
                     for orderLeg in filter(lambda ol: ol.instrument.symbol == stock,  order.OrderLegs):
@@ -185,7 +185,7 @@ class RiskCalculator():
                         rpt.write('F{0}'.format(row), order.orderType)
                         rpt.write('G{0}'.format(row), order.status)
                         rpt.write('H{0}'.format(row), enteredTime, date_format)
-                        row = row+5
+                        row = row+1
 
 
             rpt.autofit()
@@ -212,6 +212,8 @@ class RiskCalculator():
 
 
         rpt = workbook.add_worksheet("portfolio")
+
+        # write portfolio headers
         rpt.write('A1', "Cash")
         rpt.write('B1', balances.CashBalance, accounting_format)
         rpt.set_column("B:B", 10.5) # width not in pixels
@@ -224,10 +226,15 @@ class RiskCalculator():
         rpt.write('A5', "Short Options")
         rpt.write('B5', balances.ShortOptionMarketValue, accounting_format)
 
-        rpt.write('D1', "Net Liquidity")
-        rpt.write('E1', balances.LiquidationValue, accounting_format)
-        rpt.write('D2', "Max Available for Trade")
-        rpt.write('E2', balances.AvailableFunds, accounting_format)
+        rpt.write('D1', "Max Risk Per Trade")
+        rpt.write('E1', balances.LiquidationValue * .01, accounting_format)
+        # rpt.write('D2', "Max Available for Trade")
+        # rpt.write('E2', balances.AvailableFunds, accounting_format)
+
+        rpt.write('G1', "Net Liquidity")
+        rpt.write('H1', balances.LiquidationValue, accounting_format)
+        rpt.write('G2', "Max Available for Trade")
+        rpt.write('H2', balances.AvailableFunds, accounting_format)
         
         row = 6
         # this will make it much easier to maintain columns

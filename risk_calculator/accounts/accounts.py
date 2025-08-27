@@ -12,8 +12,10 @@ import accounts.transactions.transaction_data as ta
 import accounts.orders as o
 import accounts.position as Position
 import accounts.option_chain as Options
+import accounts.fundamentals as Fundamentals
 import datetime
 from typing import cast
+import requests
 
 class AccountsLauncher():
     def __init__(self, securities_account_file=None, transactions_file=None):
@@ -232,6 +234,35 @@ class AccountsLauncher():
                 for stock in sorted(result['stocks']):
                     watchlist.append(stock)
         return sorted(set(watchlist))
+
+    def get_sp500_index(self):
+        response = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", headers=self.headers)
+        response.raise_for_status()  # Raises HTTPError if status is 403
+
+        tables = pd.read_html(response.text)
+        sp500 = tables[0]
+        
+        self.save_result(sp500, self.sp500_file)
+
+    def chunked(self, lst, size):
+        for i in range(0, len(lst), size):
+            yield lst[i:i + size]
+
+    def get_fundamentals_batched(self, watchlist, batch_size=100):
+        self.Fundamentals = Fundamentals.Fundamentals()
+
+        for batch in self.chunked(watchlist, batch_size):
+            result = self.client.get_instruments(batch, self.client.Instrument.Projection.FUNDAMENTAL)
+            result.raise_for_status()
+            instruments = result.json()["instruments"]
+            # for item in instruments:
+            #     fundamental = Fundamentals.Fundamental(item)
+            #     fundamentals.append(fundamental)
+            self.Fundamentals.add_fundamentals(instruments)
+        
+        self.Fundamentals.save_fundamentals_to_file(self.fundamentals_output_file)
+        
+        return self.Fundamentals
 
     def market_hours(self):
         resp = self.client.get_transactions(self.hash)

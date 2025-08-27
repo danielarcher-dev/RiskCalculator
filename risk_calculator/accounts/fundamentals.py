@@ -1,3 +1,25 @@
+import pandas as pd
+import json
+
+class Fundamentals():
+
+    def __init__(self):
+        self.FundamentalsData = None
+        self.Fundamentals = []
+        
+        # 
+    def add_fundamentals(self, dataframe):
+        for item in dataframe:
+            fundamental = Fundamental(item)
+            self.Fundamentals.append(fundamental)
+
+    def save_fundamentals_to_file(self, save_file):
+        with open(save_file, 'w') as json_file:
+                json.dump([stock.to_dict() for stock in self.Fundamentals], json_file, indent=2)
+
+        df = pd.DataFrame([stock.to_dict() for stock in self.Fundamentals])
+        df.to_csv(save_file.replace(".json", ".csv"), index=False)
+
 class Fundamental():
     def __init__(self, item):
         self.data = item

@@ -71,39 +71,9 @@ def main():
             for object in result:
                 watchlist.append(object["Symbol"])
 
-    watchlist = list(set(watchlist))
+    watchlist = sorted(set(watchlist))
 
-    fundamentals = get_fundamentals_batched(client, watchlist)
-    
-    for item in fundamentals:
-        print(item.data)
-    
-    save_file = acct.fundamentals_output_file
-    with open(save_file, 'w') as json_file:
-        json.dump([stock.to_dict() for stock in fundamentals], json_file, indent=2)
-
-    df = pd.DataFrame([stock.to_dict() for stock in fundamentals])
-    df.to_csv(save_file.replace(".json", ".csv"), index=False)
-
-
-def chunked(lst, size):
-    for i in range(0, len(lst), size):
-        yield lst[i:i + size]
-
-def get_fundamentals_batched(client, watchlist, batch_size=100):
-    watchlist = sorted(watchlist)
-    
-    fundamentals = []
-
-    for batch in chunked(watchlist, batch_size):
-        result = client.get_instruments(batch, client.Instrument.Projection.FUNDAMENTAL)
-        result.raise_for_status()
-        instruments = result.json()["instruments"]
-        for item in instruments:
-            fundamental = Fundamentals.Fundamental(item)
-            fundamentals.append(fundamental)
-    return fundamentals
-
+    acct.get_fundamentals_batched(watchlist)
 
 # Usage
 

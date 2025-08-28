@@ -178,7 +178,7 @@ class AccountsLauncher():
                 for orderLeg in filter(lambda ol: ol.instrument.symbol == symbol and ol.legId == 1,  order.OrderLegs):
                     symbolOrders.append(order)
             except:
-                print("This order has no legs: {0}".format(order.Order))
+                print("This order has no legs: {0}".format(order.orderId))
         return symbolOrders
 
     def get_symbol_average_price(self, symbol):

@@ -314,6 +314,7 @@ class RiskCalculator():
                     unrealized_profit_loss = (pos.averagePrice - mark) * pos.Quantity
                     
                 live_risk = live_risk_per_share * abs(pos.Quantity)
+                unrealized_profit_loss_pct = unrealized_profit_loss / (pos.averagePrice * pos.Quantity) * 100
 
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), pos.marketValue, accounting_format)
                 
@@ -333,9 +334,11 @@ class RiskCalculator():
                     # if long call or long put, live risk is the same
                     live_risk_per_share = mark - stopPrice
                     unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity * opt.multiplier
+                    unrealized_profit_loss_pct = unrealized_profit_loss / (pos.averagePrice * pos.Quantity * opt.multiplier) * 100
 
                 elif pos.LongOrShort == "SHORT":
                     unrealized_profit_loss = (pos.averagePrice - mark) * abs(pos.Quantity) * opt.multiplier
+                    unrealized_profit_loss_pct = unrealized_profit_loss / (pos.averagePrice * abs(pos.Quantity) * opt.multiplier) * 100
                     if pos.instrument.putCall == Client.Options.ContractType.CALL:
                         if acct.is_it_naked(pos, opt):
                             # on a naked call, I have to buy shares at bid, and sell at strike.
@@ -352,6 +355,7 @@ class RiskCalculator():
                 break_even_point = acct.get_option_break_even_point(opt, pos.averagePrice)
 
                 live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
+                
                 # capital_at_risk_per_share = (opt.strikePrice - stopPrice)
 
                 
@@ -378,13 +382,13 @@ class RiskCalculator():
             total_live_risk += live_risk
             total_unrealized_profit_loss += unrealized_profit_loss
             live_risk_percentage_of_portfolio = live_risk / balances.LiquidationValue * 100
-            unrealized_profit_loss_pct = (unrealized_profit_loss / pos.averagePrice * pos.Quantity) * 100
+            
 
             rpt.write('{0}{1}'.format(col_symbol, row), pos.symbol)
             rpt.write('{0}{1}'.format(col_quantity, row), pos.Quantity, accounting_format)
             rpt.write('{0}{1}'.format(col_mark, row), mark, accounting_format)
             rpt.write('{0}{1}'.format(col_unrealized_profit_loss, row), unrealized_profit_loss, accounting_format)
-            rpt.write('{0}{1}'.format(col_unrealized_profit_loss_pct, row), unrealized_profit_loss_pct, accounting_format)
+            rpt.write('{0}{1}'.format(col_unrealized_profit_loss_pct, row), unrealized_profit_loss_pct, pct_format)
             rpt.write('{0}{1}'.format(col_stop, row), stopPrice, accounting_format)
             rpt.write('{0}{1}'.format(col_average_price, row), pos.averagePrice, accounting_format)
             rpt.write('{0}{1}'.format(col_break_even_point, row), break_even_point, accounting_format)
@@ -458,7 +462,7 @@ class RiskCalculator():
                 else:
                     rpt.write('{0}{1}'.format(col_profit_target_3, row), profit_target_3, accounting_format)
             elif pos.LongOrShort == "SHORT":
-                if (stopPrice > pos.averageLongPrice):
+                if (stopPrice > pos.averageShortPrice):
                     profit_target_1 = mark - (stopPrice - mark)
                     profit_target_2 = mark - ((stopPrice - mark) * 2)
                     profit_target_3 = mark - ((stopPrice - mark) * 3)

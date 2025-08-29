@@ -238,6 +238,10 @@ class Charts():
         ax1.grid(True, which='both', axis='y', linestyle='--', color='gray')
         ax1.grid(True, which='both', axis='x', linestyle='--', color='gray')
 
+        self.plot_stop_price(symbol, ax1, price_min, price_max)
+        self.plot_average_price(symbol, ax1, price_min, price_max)
+        self.plot_limit_price(symbol, ax1, price_min, price_max)
+        self.plot_option_strike(symbol, ax1, price_min, price_max)
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
     def plot_settings_30_minute_candles(self, symbol, df, timeframe):
@@ -290,7 +294,10 @@ class Charts():
 
         ax1.grid(True, which='both', axis='y', linestyle='--', color='gray')
         ax1.grid(True, which='both', axis='x', linestyle='--', color='gray')
-
+        self.plot_stop_price(symbol, ax1, price_min, price_max)
+        self.plot_average_price(symbol, ax1, price_min, price_max)
+        self.plot_limit_price(symbol, ax1, price_min, price_max)
+        self.plot_option_strike(symbol, ax1, price_min, price_max)
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
     def plot_settings_default(self, symbol, df, timeframe):
@@ -356,50 +363,100 @@ class Charts():
 
 
 
-    def plot_stop_price(self, symbol, ax1):
+    def plot_stop_price(self, symbol, ax1, price_min, price_max):
         stop_price = self.account.get_symbol_stop(symbol)
         if stop_price:
-            # Plot horizontal line for stop price
             for item in stop_price:
-                ax1.axhline(
-                    y=item["stopPrice"],
-                    color='red',
-                    linestyle='--',
-                    linewidth=1.5,
-                    label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
-                )
-
+            # Plot horizontal line for stop price
+                if item["stopPrice"] > price_max:
+                    ax1.axhline(
+                        y=price_max,
+                        color='red',
+                        linestyle='--',
+                        linewidth=1.5,
+                        label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
+                    )
+                if item["stopPrice"] < price_min:
+                    ax1.axhline(
+                        y=price_min,
+                        color='red',
+                        linestyle='--',
+                        linewidth=1.5,
+                        label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
+                    )
+                else:
+                    ax1.axhline(
+                        y=item["stopPrice"],
+                        color='red',
+                        linestyle='--',
+                        linewidth=1.5,
+                        label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
+                    )
                 # Optional: show legend
                 ax1.legend(loc='lower left')
 
-    def plot_limit_price(self, symbol, ax1):
+    def plot_limit_price(self, symbol, ax1, price_min, price_max):
         order_price = self.account.get_symbol_limit(symbol)
         if order_price:
             # Plot horizontal line for stop price
             for item in order_price:
-                ax1.axhline(
-                    y=item["limitPrice"],
-                    color='red',
-                    linestyle='--',
-                    linewidth=1.5,
-                    label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
-                )
-
+                if item["limitPrice"] > price_max:
+                    ax1.axhline(
+                        y=price_max,
+                        color='red',
+                        linestyle='--',
+                        linewidth=1.5,
+                        label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
+                    )
+                if item["limitPrice"] < price_min:
+                    ax1.axhline(
+                        y=price_min,
+                        color='red',
+                        linestyle='--',
+                        linewidth=1.5,
+                        label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
+                    )
+                else:
+                    ax1.axhline(
+                        y=item["limitPrice"],
+                        color='red',
+                        linestyle='--',
+                        linewidth=1.5,
+                        label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
+                    )
                 # Optional: show legend
                 ax1.legend(loc='lower left')
 
-    def plot_average_price(self, symbol, ax1):
+    def plot_average_price(self, symbol, ax1, price_min, price_max):
         average_price = self.account.get_symbol_average_price(symbol)
         if average_price:
-            # Plot horizontal line for stop price
-            ax1.axhline(
-                y=average_price,
-                color='green',
-                linestyle='--',
-                linewidth=1.5,
-                label=f'Average Price @ ${average_price:.2f}'
-            )
-
+            if average_price > price_max:
+                # Plot horizontal line for stop price
+                ax1.axhline(
+                    y=price_max,
+                    color='green',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=f'Average Price @ ${average_price:.2f}'
+                )
+            if average_price < price_min:
+                # Plot horizontal line for stop price
+                ax1.axhline(
+                    y=price_min,
+                    color='green',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=f'Average Price @ ${average_price:.2f}'
+                )
+            else:
+                # Plot horizontal line for stop price
+                ax1.axhline(
+                    y=average_price,
+                    color='green',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=f'Average Price @ ${average_price:.2f}'
+                )
             # Optional: show legend
             ax1.legend(loc='lower left')
 
@@ -417,9 +474,7 @@ class Charts():
             #                 linewidth=1, edgecolor='red', facecolor='none')
             # ax.add_patch(rect)
 
-    def plot_option_strike(self, symbol, ax1):
-        # stop_price = self.account.get_symbol_stop(symbol)
-
+    def plot_option_strike(self, symbol, ax1, price_min, price_max):
         symbolOptions = self.account.get_symbol_options(symbol)
         for pos in symbolOptions:
             pos = cast(position.Position, pos)
@@ -428,14 +483,33 @@ class Charts():
 
             label = "{0} {1}".format(strikePrice, pos.instrument.putCall.name)
             # TODO: add some conditions to format the strike lines
-            ax1.axhline(
-                y=strikePrice,
-                color='red',
-                linestyle='--',
-                linewidth=1.5,
-                label=label
-            )
-
+            if strikePrice > price_max:
+                # Plot horizontal line for stop price
+                ax1.axhline(
+                    y=price_max,
+                    color='red',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=label
+                )
+            if strikePrice < price_min:
+                # Plot horizontal line for stop price
+                ax1.axhline(
+                    y=price_min,
+                    color='red',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=label
+                )
+            else:
+                # Plot horizontal line for stop price
+                ax1.axhline(
+                    y=strikePrice,
+                    color='red',
+                    linestyle='--',
+                    linewidth=1.5,
+                    label=label
+                )
             # Optional: show legend
             ax1.legend(loc='lower left')
 

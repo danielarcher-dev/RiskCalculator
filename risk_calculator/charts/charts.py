@@ -345,10 +345,10 @@ class Charts():
         ax1.xaxis.set_minor_locator(mdates.DayLocator())
 
         ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
-        self.plot_stop_price(symbol, ax1)
-        self.plot_average_price(symbol, ax1)
-        self.plot_limit_price(symbol, ax1)
-        self.plot_option_strike(symbol, ax1)
+        self.plot_stop_price(symbol, ax1, price_min, price_max)
+        self.plot_average_price(symbol, ax1, price_min, price_max)
+        self.plot_limit_price(symbol, ax1, price_min, price_max)
+        self.plot_option_strike(symbol, ax1, price_min, price_max)
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
     def date_transform(self, datetime_data):
@@ -376,7 +376,7 @@ class Charts():
                         linewidth=1.5,
                         label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
                     )
-                if item["stopPrice"] < price_min:
+                elif item["stopPrice"] < price_min:
                     ax1.axhline(
                         y=price_min,
                         color='red',
@@ -408,7 +408,7 @@ class Charts():
                         linewidth=1.5,
                         label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
                     )
-                if item["limitPrice"] < price_min:
+                elif item["limitPrice"] < price_min:
                     ax1.axhline(
                         y=price_min,
                         color='red',
@@ -439,7 +439,7 @@ class Charts():
                     linewidth=1.5,
                     label=f'Average Price @ ${average_price:.2f}'
                 )
-            if average_price < price_min:
+            elif average_price < price_min:
                 # Plot horizontal line for stop price
                 ax1.axhline(
                     y=price_min,
@@ -492,7 +492,7 @@ class Charts():
                     linewidth=1.5,
                     label=label
                 )
-            if strikePrice < price_min:
+            elif strikePrice < price_min:
                 # Plot horizontal line for stop price
                 ax1.axhline(
                     y=price_min,

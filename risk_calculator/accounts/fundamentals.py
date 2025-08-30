@@ -6,12 +6,50 @@ class Fundamentals():
     def __init__(self):
         self.FundamentalsData = None
         self.Fundamentals = []
+        self.quality_scores = None
+        self.top_30 = None
+        self.bottom_10 = None
         
         # 
     def add_fundamentals(self, dataframe):
         for item in dataframe:
             fundamental = Fundamental(item)
             self.Fundamentals.append(fundamental)
+
+    def calculate_quality_score(self):
+        # 1. Load your fundamentals into a DataFrame
+        df = self.to_df()
+
+        # 2. Select & clean your metrics
+        # using TTM trailing 12 months here, because I care that the company is profitable for more than just one quarter
+        metrics = [
+            "returnOnEquity", "returnOnAssets", "peRatio",
+            "grossMarginTTM", "operatingMarginTTM", "netProfitMarginTTM",
+            "totalDebtToEquity"
+        ]
+        # this one is not available from Schwab "fcfYield",
+            # 2b. Drop rows with missing values only for selected metrics
+            # df_clean = df.dropna(subset=metrics)
+            # df = df[metrics].dropna()
+
+        # 3. Compute percentile ranks for each metric
+        for m in metrics:
+            # For metrics where *higher* is better
+            df[f"{m}_rank"] = df[m].rank(pct=True)
+
+        # 4. Invert rank for Debt-to-Equity (lower is better)
+        df["totalDebtToEquity_rank"] = (1 - df["totalDebtToEquity_rank"])
+        df["peRatio_rank"] = (1 - df["peRatio_rank"])
+
+        # 5. Composite quality score (simple average of ranks)
+        rank_cols = [c for c in df.columns if c.endswith("_rank")]
+        df["quality_score"] = df[rank_cols].mean(axis=1)
+
+        self.quality_scores = df
+        # 6. Sort and pick top/bottom
+        self.top_30   = df.sort_values("quality_score", ascending=False).head(30)
+        self.bottom_10 = df.sort_values("quality_score", ascending=True).head(10)
+
 
     def to_df(self):
         records = [stock.to_dict() for stock in self.Fundamentals]

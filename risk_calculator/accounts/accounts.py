@@ -31,6 +31,11 @@ class AccountsLauncher():
             self.SecuritiesAccount = sa.SecuritiesAccount(self.get_account_details(self.hash)['securitiesAccount'])
             self.Transactions = ta.TransactionData(self.get_account_transactions())
             self.Orders = o.Orders(self.get_account_orders())
+            self.get_account_symbols()
+            self.watchlist = self.get_watchlist()
+            self.sp500_list = self.get_sp500_index()
+
+            self.perform_fundamental_analysis()
             self.__save__()
 
         if(securities_account_file != None):
@@ -64,17 +69,16 @@ class AccountsLauncher():
         self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
         self.charts_path = self.config['Charting']['charts_path']
         self.watchlist_file = self.config['Charting']['watchlist']
-        self.watchlist = self.get_watchlist()
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today()))
         self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today()))
         self.quote_output_file = self.config['AppConfig']['quote_output_file'].replace('<date>',str(datetime.date.today()))
         self.price_history_output_file = self.config['AppConfig']['price_history_output_file'].replace('<date>',str(datetime.date.today()))
         
-        self.sp500_file = self.config['AppConfig']['index_file'].replace("<index>", "sp500")
-        self.nyse_file = self.config['AppConfig']['index_file'].replace("<index>", "nyse")
-        self.nasdaq_file = self.config['AppConfig']['index_file'].replace("<index>", "nasdaq")
-        self.amex_file = self.config['AppConfig']['index_file'].replace("<index>", "amex")
+        self.sp500_file = self.config['AppConfig']['index_file'].replace("<index>", "sp500").replace('<date>',str(datetime.date.today()))
+        self.nyse_file = self.config['AppConfig']['index_file'].replace("<index>", "nyse").replace('<date>',str(datetime.date.today()))
+        self.nasdaq_file = self.config['AppConfig']['index_file'].replace("<index>", "nasdaq").replace('<date>',str(datetime.date.today()))
+        self.amex_file = self.config['AppConfig']['index_file'].replace("<index>", "amex").replace('<date>',str(datetime.date.today()))
         self.fundamentals_output_file = self.config['AppConfig']['fundamentals_output_file'].replace('<date>',str(datetime.date.today()))
     
     def get_client(self):
@@ -125,17 +129,15 @@ class AccountsLauncher():
 
     def get_account_symbols(self):
         sorted_by_symbol = sorted(self.SecuritiesAccount.Positions, key= lambda pos: pos.symbol)
-
-        portfolio_symbols_list = []
+        self.portfolio_symbols_list = []
 
         for pos in sorted_by_symbol:
             pos = cast(Position.Position, pos)
             if pos.instrument.AssetType == 'EQUITY':
-                portfolio_symbols_list.append(pos.symbol)
+                self.portfolio_symbols_list.append(pos.symbol)
             elif pos.instrument.AssetType == 'OPTION':
-                portfolio_symbols_list.append(pos.instrument.underlyingSymbol)
-        
-        return sorted(set(portfolio_symbols_list))
+                self.portfolio_symbols_list.append(pos.instrument.underlyingSymbol)
+        self.portfolio_symbols_list = sorted(set(self.portfolio_symbols_list))
 
     def get_symbol_quote(self, symbol, quote_type):
         result = self.client.get_quote(symbol).json()
@@ -236,13 +238,18 @@ class AccountsLauncher():
         return sorted(set(watchlist))
 
     def get_sp500_index(self):
-        response = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", headers=self.headers)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        }
+        response = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", headers=headers)
         response.raise_for_status()  # Raises HTTPError if status is 403
 
         tables = pd.read_html(response.text)
         sp500 = tables[0]
-        
-        self.save_result(sp500, self.sp500_file)
+        sp500.to_json(self.sp500_file, orient="records", lines=False)
+
+        sp500_list = sp500["Symbol"].tolist()
+        return sp500_list
 
     def chunked(self, lst, size):
         for i in range(0, len(lst), size):
@@ -260,6 +267,37 @@ class AccountsLauncher():
         self.Fundamentals.save_fundamentals_to_file(self.fundamentals_output_file)
         
         return self.Fundamentals
+
+    def perform_fundamental_analysis(self):
+        # 1. combine my portfolio, watchlist and indexes symbols
+        stocklist = []
+        for item in self.portfolio_symbols_list:
+            stocklist.append(item)
+        for item in self.watchlist:
+            stocklist.append(item)
+        for item in self.sp500_list:
+            stocklist.append(item)
+
+        stocklist = sorted(set(stocklist))
+        
+        # 2. get fundamentals for them
+        self.get_fundamentals_batched(stocklist)
+
+        # 3. calculate the composite quality score
+        self.Fundamentals.calculate_quality_score()
+
+        save_file = self.fundamentals_output_file.replace(".json", "_quality_scores.csv")
+        self.Fundamentals.quality_scores.to_csv(save_file, index=True)
+
+        save_file = self.fundamentals_output_file.replace(".json", "_top30.csv")
+        self.Fundamentals.top_30.to_csv(save_file, index=True)
+
+        save_file = self.fundamentals_output_file.replace(".json", "_bottom30.csv")
+        self.Fundamentals.bottom_10.to_csv(save_file, index=True)
+
+        # 4. expose the score in an easy way
+
+        # 5. for charting, sort the list by the score, so that higher quality comes first
 
     def market_hours(self):
         resp = self.client.get_transactions(self.hash)

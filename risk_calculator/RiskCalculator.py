@@ -103,6 +103,11 @@ class RiskCalculator():
                 rpt.set_column("A:A", 198) # width not in pixels
                 rpt.set_column("B:B", 4) # width not in pixels
 
+                row = 1
+                rpt.write('C{0}'.format(row), "Quality Score:")
+                quality_score = acct.Fundamentals.quality_scores["quality_score"][stock]
+                rpt.write('D{0}'.format(row), quality_score)
+
 
                 # TODO: I want to put, starting on column C1, print out of recent orders, transactions, and stops, as well as key ratios
                 # TODO: I want to put in, if we have a file a notes akin to a journal.
@@ -120,7 +125,7 @@ class RiskCalculator():
 
     def write_portfolio_charts(self, acct, workbook):
         acct = cast(accounts.AccountsLauncher, acct)
-        stock_list = acct.get_account_symbols()
+        stock_list = acct.portfolio_symbols_list
         charts_file = acct.risk_calculator_charts_file
         mycharts = Charts.Charts(acct) # charting also needs acct.client
         # mycharts.export_stocklist(portfolio_symbols, charts_file)
@@ -137,6 +142,7 @@ class RiskCalculator():
         date_format = wbf['date_format']
 
         for stock in stock_list:
+
             rpt = workbook.add_worksheet(stock)
             rpt.set_zoom(100)
 
@@ -158,10 +164,9 @@ class RiskCalculator():
                 # acct = cast(accounts.AccountsLauncher, acct)
             
             symbolOrders = acct.get_symbol_orders(stock)
-
+            row = 1
             if symbolOrders:
                 filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']
-                row = 1
                 rpt.write('C{0}'.format(row), "Order Id:")
                 rpt.write('D{0}'.format(row), "Order Quantity:")
                 rpt.write('E{0}'.format(row), "Price:")
@@ -187,7 +192,11 @@ class RiskCalculator():
                         rpt.write('H{0}'.format(row), enteredTime, date_format)
                         row = row+1
 
-
+            row = row+1
+            rpt.write('C{0}'.format(row), "Quality Score:")
+            quality_score = acct.Fundamentals.quality_scores["quality_score"][stock]
+            rpt.write('D{0}'.format(row), quality_score)
+            
             rpt.autofit()
             rpt.set_column("A:A", 198) # width not in pixels
             rpt.set_column("B:B", 4) # width not in pixels

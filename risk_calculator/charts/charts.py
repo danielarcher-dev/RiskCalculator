@@ -17,6 +17,7 @@ class Charts():
         self.account = cast(accounts.AccountsLauncher, account)
         self.client = account.client
         self.path = self.account.config['Charting']['charts_path']
+        self.default_legend_loc = 'upper left'
 
     def generate_charts(self, stock_list):
         for stock in stock_list:
@@ -371,7 +372,7 @@ class Charts():
                 if item["stopPrice"] > price_max:
                     ax1.axhline(
                         y=price_max,
-                        color='red',
+                        color=(1, 0, 0, 0.5),
                         linestyle='--',
                         linewidth=1.5,
                         label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
@@ -379,7 +380,7 @@ class Charts():
                 elif item["stopPrice"] < price_min:
                     ax1.axhline(
                         y=price_min,
-                        color='red',
+                        color=(1, 0, 0, 0.5),
                         linestyle='--',
                         linewidth=1.5,
                         label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
@@ -393,7 +394,7 @@ class Charts():
                         label=f'Stop {item["quantity"]} @ ${item["stopPrice"]:.2f}'
                     )
                 # Optional: show legend
-                ax1.legend(loc='lower left')
+                ax1.legend(loc=self.default_legend_loc)
 
     def plot_limit_price(self, symbol, ax1, price_min, price_max):
         order_price = self.account.get_symbol_limit(symbol)
@@ -403,7 +404,7 @@ class Charts():
                 if item["limitPrice"] > price_max:
                     ax1.axhline(
                         y=price_max,
-                        color='red',
+                        color=(1, 0, 0, 0.5),
                         linestyle='--',
                         linewidth=1.5,
                         label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
@@ -411,7 +412,7 @@ class Charts():
                 elif item["limitPrice"] < price_min:
                     ax1.axhline(
                         y=price_min,
-                        color='red',
+                        color=(1, 0, 0, 0.5),
                         linestyle='--',
                         linewidth=1.5,
                         label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
@@ -425,7 +426,7 @@ class Charts():
                         label=f'Limit {item["quantity"]} @ ${item["limitPrice"]:.2f}'
                     )
                 # Optional: show legend
-                ax1.legend(loc='lower left')
+                ax1.legend(loc=self.default_legend_loc)
 
     def plot_average_price(self, symbol, ax1, price_min, price_max):
         average_price = self.account.get_symbol_average_price(symbol)
@@ -434,7 +435,7 @@ class Charts():
                 # Plot horizontal line for stop price
                 ax1.axhline(
                     y=price_max,
-                    color='green',
+                    color=(0, 1, 0, 0.5),
                     linestyle='--',
                     linewidth=1.5,
                     label=f'Average Price @ ${average_price:.2f}'
@@ -443,7 +444,7 @@ class Charts():
                 # Plot horizontal line for stop price
                 ax1.axhline(
                     y=price_min,
-                    color='green',
+                    color=(0, 1, 0, 0.5),
                     linestyle='--',
                     linewidth=1.5,
                     label=f'Average Price @ ${average_price:.2f}'
@@ -458,7 +459,7 @@ class Charts():
                     label=f'Average Price @ ${average_price:.2f}'
                 )
             # Optional: show legend
-            ax1.legend(loc='lower left')
+            ax1.legend(loc=self.default_legend_loc)
 
         # TODO: this is where order date would be plotted
             # Convert date to matplotlib float format
@@ -487,7 +488,7 @@ class Charts():
                 # Plot horizontal line for stop price
                 ax1.axhline(
                     y=price_max,
-                    color='red',
+                    color=(1, 0, 0, 0.5),
                     linestyle='--',
                     linewidth=1.5,
                     label=label
@@ -496,7 +497,7 @@ class Charts():
                 # Plot horizontal line for stop price
                 ax1.axhline(
                     y=price_min,
-                    color='red',
+                    color=(1, 0, 0, 0.5),
                     linestyle='--',
                     linewidth=1.5,
                     label=label
@@ -511,7 +512,7 @@ class Charts():
                     label=label
                 )
             # Optional: show legend
-            ax1.legend(loc='lower left')
+            ax1.legend(loc=self.default_legend_loc)
 
     def export_stocklist(self, stock_list, charts_file):
         # due to timeouts with the ExcelWriter, we're grabbing all the charts in one loop

@@ -11,6 +11,7 @@ import matplotlib.ticker as ticker
 import matplotlib.dates as mdates
 import datetime
 import numpy as np
+import os
 
 class Charts():
     def __init__(self, account):
@@ -107,17 +108,21 @@ class Charts():
         days = 180
         label = "180_daily"
         save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
-        options = {
-            "save_file": save_file,
-            "end_date": datetime.datetime.now(),
-            "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
-            "period_type": Client.PriceHistory.PeriodType.MONTH,                    # 'day' allows intraday data
-            "period": None,
-            "frequency_type": Client.PriceHistory.FrequencyType.DAILY,              # minute-level granularity
-            "frequency": Client.PriceHistory.Frequency.DAILY,                       # 1-minute intervals
-            "extended_hours_data": False                                            # Optional: include pre/post-market
-            }
-        self.get_and_save_price_history(symbol, options)
+
+        # this is a long term chart, we don't need to refresh it every day, check if we grabbed it already today
+        if not os.path.exists(save_file):
+            options = {
+                "save_file": save_file,
+                "end_date": datetime.datetime.now(),
+                "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
+                "period_type": Client.PriceHistory.PeriodType.MONTH,                    # 'day' allows intraday data
+                "period": None,
+                "frequency_type": Client.PriceHistory.FrequencyType.DAILY,              # minute-level granularity
+                "frequency": Client.PriceHistory.Frequency.DAILY,                       # 1-minute intervals
+                "extended_hours_data": False                                            # Optional: include pre/post-market
+                }
+            self.get_and_save_price_history(symbol, options)
+        # assumption, json price history already exists, it shouldn't have changed, re-use it
         df = self.price_history_to_dataframe(save_file)
         self.plot_settings_default(symbol, df, label) 
 
@@ -125,23 +130,23 @@ class Charts():
         days = 365
         label = "365_weekly"
         save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
-        options = {
-            "save_file": save_file,
-            "end_date": datetime.datetime.now(),
-            "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
-            "period_type": Client.PriceHistory.PeriodType.YEAR,                    # 'day' allows intraday data
-            "period": None,
-            "frequency_type": Client.PriceHistory.FrequencyType.WEEKLY,              # minute-level granularity
-            "frequency": Client.PriceHistory.Frequency.WEEKLY,                       # 1-minute intervals
-            "extended_hours_data": False                                            # Optional: include pre/post-market
-            }
-        self.get_and_save_price_history(symbol, options)
+
+        # this is a long term chart, we don't need to refresh it every day, check if we grabbed it already today
+        if not os.path.exists(save_file):
+            options = {
+                "save_file": save_file,
+                "end_date": datetime.datetime.now(),
+                "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
+                "period_type": Client.PriceHistory.PeriodType.YEAR,                    # 'day' allows intraday data
+                "period": None,
+                "frequency_type": Client.PriceHistory.FrequencyType.WEEKLY,              # minute-level granularity
+                "frequency": Client.PriceHistory.Frequency.WEEKLY,                       # 1-minute intervals
+                "extended_hours_data": False                                            # Optional: include pre/post-market
+                }
+            self.get_and_save_price_history(symbol, options)
+        # assumption, json price history already exists, it shouldn't have changed, re-use it
         df = self.price_history_to_dataframe(save_file)
         self.plot_settings_default(symbol, df, label)
-
-        return
-
-    
 
     def plot_settings_minute_candles(self, symbol, df, timeframe):
         right_now = datetime.datetime.now()

@@ -3,7 +3,6 @@ from schwab.client import Client
 import json
 import csv
 import conf
-import json_to_csv
 import pandas as pd
 from io import StringIO
 import httpx
@@ -279,7 +278,7 @@ class AccountsLauncher():
             stocklist.append(item)
 
         stocklist = sorted(set(stocklist))
-        
+
         # 2. get fundamentals for them
         self.get_fundamentals_batched(stocklist)
 

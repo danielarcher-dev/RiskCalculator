@@ -23,7 +23,7 @@ class Fundamentals():
         # 2. Select & clean your metrics
         # using TTM trailing 12 months here, because I care that the company is profitable for more than just one quarter
         metrics = [
-            "returnOnEquity", "returnOnAssets", "peRatio",
+            "returnOnEquity", "returnOnAssets", "peRatio", "pcfRatio",
             "grossMarginTTM", "operatingMarginTTM", "netProfitMarginTTM",
             "totalDebtToEquity"
         ]

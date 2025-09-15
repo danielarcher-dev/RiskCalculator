@@ -3,7 +3,6 @@ from schwab.client import Client
 import json
 import csv
 import conf
-import json_to_csv
 import pandas as pd
 from io import StringIO
 import httpx
@@ -75,6 +74,20 @@ class RiskCalculator():
         # bold_format = wbf['bold_format']
 
         watchlist = acct.watchlist
+
+        # I want to prioritize my charting review by quality of stock
+        # I want to view the top 30 and bottom 10
+        for item in acct.Fundamentals.top_30.index:
+            watchlist.append(item)
+        for item in acct.Fundamentals.bottom_10.index:
+            watchlist.append(item)
+        scored_tickers = []
+        for stock in watchlist:
+            quality_score = acct.Fundamentals.quality_scores["quality_score"][stock]
+            scored_tickers.append((stock, quality_score))
+        sorted_tickers = sorted(scored_tickers, key=lambda x: x[1], reverse=True)
+        watchlist = [ticker for ticker, score in sorted_tickers]
+
         mycharts = Charts.Charts(acct) # charting also needs acct.client
         # mycharts.export_stocklist(portfolio_symbols, charts_file)
 
@@ -244,7 +257,13 @@ class RiskCalculator():
         rpt.write('H1', balances.LiquidationValue, accounting_format)
         rpt.write('G2', "Max Available for Trade")
         rpt.write('H2', balances.AvailableFunds, accounting_format)
+        rpt.write('G3', "Distance from Liquidation")
+        rpt.write('H3', balances.LiquidationValue - 25000, accounting_format)
         
+        rpt.write('J1', "Time of Report")
+        rpt.write('K1', datetime.datetime.now())
+        
+
         row = 6
         # this will make it much easier to maintain columns
         col_symbol                  = 'B'

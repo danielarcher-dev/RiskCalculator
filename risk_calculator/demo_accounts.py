@@ -37,6 +37,17 @@ def main():
     # securities_account = acct.SecuritiesAccount
     # transactions = acct.Transactions
 
+    watchlist = acct.watchlist
+    for item in acct.Fundamentals.top_30.index:
+        watchlist.append(item)
+    scored_tickers = []
+    for stock in watchlist:
+        quality_score = acct.Fundamentals.quality_scores["quality_score"][stock]
+        scored_tickers.append((stock, quality_score))
+    sorted_tickers = sorted(scored_tickers, key=lambda x: x[1], reverse=True)
+    print(sorted_tickers)
+    
+
 
     # high level reporting
     # print_welcome(securities_account, client)
@@ -46,64 +57,6 @@ def main():
     # print_my_orders(acct)
     # print_transactions(transactions, acct)
     # print_my_watchlist(watchlist_file=acct.watchlist)
-
-    watchlist = acct.watchlist
-    with open(acct.sp500_file, "r") as file:
-            result = json.load(file)
-            for object in result:
-                watchlist.append(object["Symbol"])
-
-    watchlist = sorted(set(watchlist))
-
-    acct.get_fundamentals_batched(watchlist)
-
-
-    # import pandas as pd
-
-    # 1. Load your fundamentals into a DataFrame
-    #    Assume `fundamentals` is a dict: { symbol: {roe:…, roa:…, grossMargin:…, …}, … }
-    # df = pd.DataFrame.from_dict(acct.Fundamentals.Fundamentals, orient="index")
-    df = acct.Fundamentals.to_df()
-
-    print(df)
-
-    # 2. Select & clean your metrics
-    # using TTM trailing 12 months here, because I care that the company is profitable for more than just one quarter
-    metrics = [
-        "returnOnEquity", "returnOnAssets", "peRatio",
-        "grossMarginTTM", "operatingMarginTTM", "netProfitMarginTTM",
-        "totalDebtToEquity"
-    ]
-    # this one is not available from Schwab "fcfYield", 
-    df = df[metrics].dropna()
-
-    # 3. Compute percentile ranks for each metric
-    for m in metrics:
-        # For metrics where *higher* is better
-        df[f"{m}_rank"] = df[m].rank(pct=True)
-
-    # 4. Invert rank for Debt-to-Equity (lower is better)
-    df["totalDebtToEquity_rank"] = (1 - df["totalDebtToEquity_rank"])
-    df["peRatio_rank"] = (1 - df["peRatio_rank"])
-    
-
-    # 5. Composite quality score (simple average of ranks)
-    rank_cols = [c for c in df.columns if c.endswith("_rank")]
-    df["quality_score"] = df[rank_cols].mean(axis=1)
-
-    # 6. Sort and pick top/bottom
-    top_30   = df.sort_values("quality_score", ascending=False).head(30)
-    bottom_10 = df.sort_values("quality_score", ascending=True).head(10)
-
-    # 7. Results
-    print("Top 30 Quality Stocks:\n", top_30["quality_score"])
-    print("\nBottom 10 Risky Stocks:\n", bottom_10["quality_score"])
-
-    save_file = acct.fundamentals_output_file.replace(".json", "_top30.csv")
-    top_30.to_csv(save_file, index=True)
-
-    save_file = acct.fundamentals_output_file.replace(".json", "_bottom30.csv")
-    bottom_10.to_csv(save_file, index=True)
 
 
 

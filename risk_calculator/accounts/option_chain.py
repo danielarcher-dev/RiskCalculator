@@ -70,7 +70,8 @@ def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expira
     chain_json = chain.json()
 
     # TODO: until I'm splitting out the individual dte/strike element, just save this at the underlyingSymbol level
-    options_chain_name = acct.options_chain_file.replace("<symbol>", underlying_symbol)
+    label = "{0}_{1}_{2}".format(underlying_symbol, strike, contract_type)
+    options_chain_name = acct.options_chain_file.replace("<symbol>", label)
     with open(options_chain_name, 'w') as json_file:
         json.dump(chain_json, json_file)
 
@@ -193,20 +194,3 @@ class OptionChain:
         self.q_ratio = self.annualized_return_on_risk_pct
 
         self.marketValue = None
-
-
-# chain = client.get_option_chain(
-            #     symbol=pos.instrument.underlyingSymbol,
-            #     contract_type=pos.instrument.putCall,
-            #     strategy=client.Options.Strategy.SINGLE,
-            #     strike_count=10,
-            #     include_underlying_quote=True,
-            #     from_date=pos.instrument.expiration,
-            #     to_date=pos.instrument.expiration
-            # )
-            
-            # assert chain.status_code == httpx.codes.OK
-            # chain_json = chain.json()
-            # options_chain_name = acct.options_chain_file.replace("<symbol>", pos.symbol)
-            # with open(options_chain_name, 'w') as json_file:
-            #     json.dump(chain_json, json_file)

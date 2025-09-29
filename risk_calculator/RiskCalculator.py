@@ -110,7 +110,7 @@ class RiskCalculator():
                 scale = (1580 / 1718)
 
                 rpt.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
-                rpt.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
+                rpt.insert_image('A38', image2, {'x_scale': scale, 'y_scale': scale})
                 rpt.insert_image('A73', image3, {'x_scale': scale, 'y_scale': scale})
 
                 rpt.set_column("A:A", 198) # width not in pixels
@@ -169,7 +169,7 @@ class RiskCalculator():
             scale = (1580 / 1718)
 
             rpt.insert_image('A1', image1, {'x_scale': scale, 'y_scale': scale})
-            rpt.insert_image('A36', image2, {'x_scale': scale, 'y_scale': scale})
+            rpt.insert_image('A38', image2, {'x_scale': scale, 'y_scale': scale})
             rpt.insert_image('A73', image3, {'x_scale': scale, 'y_scale': scale})
 
 

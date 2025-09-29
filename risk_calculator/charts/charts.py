@@ -90,10 +90,24 @@ class Charts():
          # 1 day 30 minute
         label = "1_day_30_minute"
         save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
+        
+        # assuming our ticker doesn't trade on the weekend
+        # the daily chart is blank on the weekend
+        today = datetime.date.today()
+        # Get day of the week as a string (e.g., 'Sunday')
+        day_name = today.strftime('%A')
+        
+        if day_name == "Saturday":
+            hours_adjustment = 24 +12
+        elif day_name == "Sunday":
+            hours_adjustment = 48 + 12
+        else:
+            hours_adjustment = 12
+
         options = {
             "save_file": save_file,
             "end_date": datetime.datetime.now(),
-            "start_date": datetime.datetime.now() - datetime.timedelta(hours=12),
+            "start_date": datetime.datetime.now() - datetime.timedelta(hours=hours_adjustment),
             "period_type": Client.PriceHistory.PeriodType.DAY,                      # 'day' allows intraday data
             "period": None,
             "frequency_type": Client.PriceHistory.FrequencyType.MINUTE,             # minute-level granularity
@@ -182,7 +196,8 @@ class Charts():
             datetime_format=' %Y-%m-%d %H:%M',
             xrotation=90,
             title=f"{symbol}, {month} - {year}\n{timeframe}",
-            ylabel='Price ($)'
+            ylabel='Price ($)',
+            volume=True
         )
 
         ax1 = axes[0]
@@ -194,6 +209,10 @@ class Charts():
 
         ax1.grid(True, which='both', axis='y', linestyle='--', color='gray')
         ax1.grid(True, which='both', axis='x', linestyle='--', color='gray')
+
+        ax_vol = axes[2]
+        ax_vol.grid(True, which='both', axis='y', linestyle='--', color='gray')
+        ax_vol.set_ylabel('Volume')
 
         fig.savefig(f"{self.path}/{symbol}_chart_{timeframe}.png", dpi=96, bbox_inches="tight")
 
@@ -231,7 +250,8 @@ class Charts():
             datetime_format=' %Y-%m-%d %H:%M',
             xrotation=90,
             title=f"{symbol}, {month} - {year}\n{timeframe}",
-            ylabel='Price ($)'
+            ylabel='Price ($)',
+            volume=True
         )
 
         ax1 = axes[0]
@@ -243,6 +263,10 @@ class Charts():
 
         ax1.grid(True, which='both', axis='y', linestyle='--', color='gray')
         ax1.grid(True, which='both', axis='x', linestyle='--', color='gray')
+
+        ax_vol = axes[2]
+        ax_vol.grid(True, which='both', axis='y', linestyle='--', color='gray')
+        ax_vol.set_ylabel('Volume')
 
         self.plot_stop_price(symbol, ax1, price_min, price_max)
         self.plot_average_price(symbol, ax1, price_min, price_max)
@@ -288,7 +312,8 @@ class Charts():
             datetime_format=' %Y-%m-%d %H:%M',
             xrotation=90,
             title=f"{symbol}, {month} - {year}\n{timeframe}",
-            ylabel='Price ($)'
+            ylabel='Price ($)',
+            volume=True
         )
 
         ax1 = axes[0]
@@ -300,6 +325,11 @@ class Charts():
 
         ax1.grid(True, which='both', axis='y', linestyle='--', color='gray')
         ax1.grid(True, which='both', axis='x', linestyle='--', color='gray')
+
+        ax_vol = axes[2]
+        ax_vol.grid(True, which='both', axis='y', linestyle='--', color='gray')
+        ax_vol.set_ylabel('Volume')
+
         self.plot_stop_price(symbol, ax1, price_min, price_max)
         self.plot_average_price(symbol, ax1, price_min, price_max)
         self.plot_limit_price(symbol, ax1, price_min, price_max)
@@ -340,7 +370,8 @@ class Charts():
             # datetime_format=' %Y-%m-%d %H:%M',
             xrotation=90,
             title=f"{symbol}, {month} - {year}\n{timeframe}",
-            ylabel='Price ($)'
+            ylabel='Price ($)',
+            volume=True
         )
 
         ax1 = axes[0]
@@ -351,6 +382,11 @@ class Charts():
         ax1.xaxis.set_minor_locator(mdates.DayLocator())
 
         ax1.grid(True, which='major', axis='y', linestyle='--', color='gray')
+
+        ax_vol = axes[2]
+        ax_vol.grid(True, which='both', axis='y', linestyle='--', color='gray')
+        ax_vol.set_ylabel('Volume')
+
         self.plot_stop_price(symbol, ax1, price_min, price_max)
         self.plot_average_price(symbol, ax1, price_min, price_max)
         self.plot_limit_price(symbol, ax1, price_min, price_max)

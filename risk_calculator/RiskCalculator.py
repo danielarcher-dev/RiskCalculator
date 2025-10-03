@@ -71,7 +71,7 @@ class RiskCalculator():
         accounting_format = wbf['accounting_format']
         pct_format = wbf['pct_format']
         bold_format = wbf['bold_format']
-        # bold_format = wbf['bold_format']
+        date_format = wbf['date_format']
 
         watchlist = acct.watchlist
 
@@ -121,9 +121,30 @@ class RiskCalculator():
                 quality_score = acct.Fundamentals.quality_scores["quality_score"][stock]
                 rpt.write('D{0}'.format(row), quality_score)
 
+                row = row + 2
+                rpt.write('C{0}'.format(row), "Shares Outstanding:")
+                shares_outstanding = acct.Fundamentals.get_fundamental(stock).sharesOutstanding
+                rpt.write('D{0}'.format(row), shares_outstanding, accounting_format)
+
+                row = row+2
+                rpt.write('C{0}'.format(row), "Average Daily Volume:")
+                
+                average_daily_volume = self.average_daily_volume(mycharts, stock)
+                for date, record in average_daily_volume.tail(1).iterrows():
+                    rpt.write('D{0}'.format(row),record['volume_1d_avg'], accounting_format)
+                row = row+1
+                for date, record in average_daily_volume.iterrows():
+                    rpt.write('C{0}'.format(row),date.date(), date_format)
+                    rpt.write('D{0}'.format(row),record['volume_20d_avg'], accounting_format)
+                    row = row+1
 
                 # TODO: I want to put, starting on column C1, print out of recent orders, transactions, and stops, as well as key ratios
                 # TODO: I want to put in, if we have a file a notes akin to a journal.
+
+                rpt.autofit()
+                rpt.set_column("A:A", 198) # width not in pixels
+                rpt.set_column("B:B", 4) # width not in pixels
+                rpt.set_column("H:H", 17) # width not in pixels
 
             except xlsxwriter.exceptions.DuplicateWorksheetName as e:
                 if "Sheetname" in str(e) and "is already in use" in str(e):
@@ -146,7 +167,7 @@ class RiskCalculator():
         mycharts.generate_charts(stock_list)
 
         wbf = self.workbook_formats(workbook)
-        # accounting_format = wbf['accounting_format']
+        accounting_format = wbf['accounting_format']
         # pct_format = wbf['pct_format']
         # bold_format = wbf['bold_format']
         # light_green_format = wbf['light_green_format']
@@ -210,6 +231,23 @@ class RiskCalculator():
             quality_score = acct.Fundamentals.quality_scores["quality_score"][stock]
             rpt.write('D{0}'.format(row), quality_score)
             
+            row = row + 2
+            rpt.write('C{0}'.format(row), "Shares Outstanding:")
+            shares_outstanding = acct.Fundamentals.get_fundamental(stock).sharesOutstanding
+            rpt.write('D{0}'.format(row), shares_outstanding, accounting_format)
+
+            row = row+2
+            rpt.write('C{0}'.format(row), "Average Daily Volume:")
+            
+            average_daily_volume = self.average_daily_volume(mycharts, stock)
+            for date, record in average_daily_volume.tail(1).iterrows():
+                rpt.write('D{0}'.format(row),record['volume_1d_avg'], accounting_format)
+            row = row+1
+            for date, record in average_daily_volume.iterrows():
+                rpt.write('C{0}'.format(row),date.date(), date_format)
+                rpt.write('D{0}'.format(row),record['volume_20d_avg'], accounting_format)
+                row = row+1
+
             rpt.autofit()
             rpt.set_column("A:A", 198) # width not in pixels
             rpt.set_column("B:B", 4) # width not in pixels
@@ -604,8 +642,17 @@ class RiskCalculator():
     #     self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
     #     self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
     
+    def average_daily_volume(self, mycharts, symbol):
+        save_file = './data/price_history/{0}_180_daily_{1}.json'.format(symbol,str(datetime.date.today()))
+        df = mycharts.price_history_to_dataframe(save_file)
+        # df.to_csv(save_file.replace(".json", ".csv"), index=True)
+        return df.tail(20)
 
-
+    # def daily_volume(self, mycharts, symbol):
+    #     save_file = './data/price_history/{0}_180_daily_{1}.json'.format(symbol,str(datetime.date.today()))
+    #     df = mycharts.price_history_to_dataframe(save_file)
+    #     # df.to_csv(save_file.replace(".json", ".csv"), index=True)
+    #     return df.tail(20)
 
 
     def run(self):

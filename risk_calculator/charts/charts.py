@@ -63,9 +63,15 @@ class Charts():
             # df = df.set_index('datetime')
             df.set_index('datetime', inplace=True)
             df.index.name = 'Date'
-            df.shape
-            df.head(3)
-            df.tail(3)
+
+            # Compute rolling 20-day average volume
+            df['volume_20d_avg'] = df['volume'].rolling(window=20).mean()
+            df['volume_10d_avg'] = df['volume'].rolling(window=10).mean()
+            df['volume_1d_avg'] = df['volume'].rolling(window=1).mean()
+            
+            # df.shape
+            # df.head(3)
+            # df.tail(3)
             return df
 
 
@@ -123,20 +129,17 @@ class Charts():
         label = "180_daily"
         save_file = self.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", label)
 
-        # this is a long term chart, we don't need to refresh it every day, check if we grabbed it already today
-        if not os.path.exists(save_file):
-            options = {
-                "save_file": save_file,
-                "end_date": datetime.datetime.now(),
-                "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
-                "period_type": Client.PriceHistory.PeriodType.MONTH,                    # 'day' allows intraday data
-                "period": None,
-                "frequency_type": Client.PriceHistory.FrequencyType.DAILY,              # minute-level granularity
-                "frequency": Client.PriceHistory.Frequency.DAILY,                       # 1-minute intervals
-                "extended_hours_data": False                                            # Optional: include pre/post-market
-                }
-            self.get_and_save_price_history(symbol, options)
-        # assumption, json price history already exists, it shouldn't have changed, re-use it
+        options = {
+            "save_file": save_file,
+            "end_date": datetime.datetime.now(),
+            "start_date": datetime.datetime.now() - datetime.timedelta(days=days),
+            "period_type": Client.PriceHistory.PeriodType.MONTH,                    # 'day' allows intraday data
+            "period": None,
+            "frequency_type": Client.PriceHistory.FrequencyType.DAILY,              # minute-level granularity
+            "frequency": Client.PriceHistory.Frequency.DAILY,                       # 1-minute intervals
+            "extended_hours_data": False                                            # Optional: include pre/post-market
+            }
+        self.get_and_save_price_history(symbol, options)
         df = self.price_history_to_dataframe(save_file)
         self.plot_settings_default(symbol, df, label) 
 

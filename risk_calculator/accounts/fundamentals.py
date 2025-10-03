@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from typing import cast
 
 class Fundamentals():
 
@@ -50,6 +51,11 @@ class Fundamentals():
         self.top_30   = df.sort_values("quality_score", ascending=False).head(30)
         self.bottom_10 = df.sort_values("quality_score", ascending=True).head(10)
 
+    def get_fundamental(self, symbol):
+        for item in self.Fundamentals:
+            item = cast(Fundamental, item)
+            if item.symbol == symbol:
+                return item
 
     def to_df(self):
         records = [stock.to_dict() for stock in self.Fundamentals]

@@ -63,15 +63,16 @@ class AccountsLauncher():
     def read_config(self):
         self.config = conf.get_config()
         self.target_account = self.config['RuntimeSecrets']['target_account']
-        self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
-        self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
-        self.orders_file = self.config['AppConfig']['orders_file'].replace('<date>',str(datetime.date.today()))
-        self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today()))
+        self.target_account_prefix = self.target_account[-3:]
+        self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today())).replace('<account_id>', self.target_account_prefix)
+        self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today())).replace('<account_id>', self.target_account_prefix)
+        self.orders_file = self.config['AppConfig']['orders_file'].replace('<date>',str(datetime.date.today())).replace('<account_id>', self.target_account_prefix)
+        self.charts_file = self.config['Charting']['charts_file'].replace('<date>',str(datetime.date.today())).replace('<account_id>', self.target_account_prefix)
         self.charts_path = self.config['Charting']['charts_path']
         self.watchlist_file = self.config['Charting']['watchlist']
         self.options_chain_file = self.config['AppConfig']['options_chain_file'].replace('<date>',str(datetime.date.today()))
-        self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today()))
-        self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today()))
+        self.risk_calculator_output_file = self.config['AppConfig']['risk_calculator_output_file'].replace('<date>',str(datetime.date.today())).replace('<account_id>', self.target_account_prefix)
+        self.risk_calculator_charts_file = self.config['AppConfig']['risk_calculator_charts_file'].replace('<date>',str(datetime.date.today())).replace('<account_id>', self.target_account_prefix)
         self.quote_output_file = self.config['AppConfig']['quote_output_file'].replace('<date>',str(datetime.date.today()))
         self.price_history_output_file = self.config['AppConfig']['price_history_output_file'].replace('<date>',str(datetime.date.today()))
         
@@ -142,6 +143,9 @@ class AccountsLauncher():
     def get_symbol_quote(self, symbol, quote_type):
         result = self.client.get_quote(symbol).json()
         save_file = self.quote_output_file.replace("<symbol>", symbol)
+
+        self.create_folder(save_file)
+        
         with open(save_file, 'w') as json_file:
             json.dump(result, json_file)
         try:
@@ -150,6 +154,12 @@ class AccountsLauncher():
             print("There was an error getting quote for {0} {1}".format(symbol, quote_type))
             quote = None
         return quote
+
+    def create_folder(self, file_path):
+        import os
+
+        directory_path = os.path.dirname(file_path)
+        os.makedirs(directory_path, exist_ok=True)
 
     def get_symbol_stop(self, symbol):
         filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']

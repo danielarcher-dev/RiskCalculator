@@ -47,6 +47,8 @@ class Charts():
             need_extended_hours_data=extended_hours_data
         ).json()
 
+        self.account.create_folder(save_file)
+        
         with open(save_file, 'w') as json_file:
             json.dump(price_history, json_file)
 

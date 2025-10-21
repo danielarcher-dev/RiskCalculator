@@ -72,6 +72,7 @@ def get_option_chain(acct, underlying_symbol, contract_type, strike=None, expira
     # TODO: until I'm splitting out the individual dte/strike element, just save this at the underlyingSymbol level
     label = "{0}_{1}_{2}".format(underlying_symbol, strike, contract_type)
     options_chain_name = acct.options_chain_file.replace("<symbol>", label)
+    acct.create_folder(options_chain_name)
     with open(options_chain_name, 'w') as json_file:
         json.dump(chain_json, json_file)
 

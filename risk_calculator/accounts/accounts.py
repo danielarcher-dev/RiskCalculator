@@ -62,6 +62,7 @@ class AccountsLauncher():
     
     def read_config(self):
         self.config = conf.get_config()
+        self.target_account = self.config['RuntimeSecrets']['target_account']
         self.securities_account_file = self.config['AppConfig']['securities_account_file'].replace('<date>',str(datetime.date.today()))
         self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
         self.orders_file = self.config['AppConfig']['orders_file'].replace('<date>',str(datetime.date.today()))
@@ -81,7 +82,7 @@ class AccountsLauncher():
         self.fundamentals_output_file = self.config['AppConfig']['fundamentals_output_file'].replace('<date>',str(datetime.date.today()))
     
     def get_client(self):
-        self.client = conf.get_client()
+        self.client = conf.get_client(self.target_account)
     
     def get_account_numbers(self):
         resp = self.client.get_account_numbers()
@@ -143,8 +144,12 @@ class AccountsLauncher():
         save_file = self.quote_output_file.replace("<symbol>", symbol)
         with open(save_file, 'w') as json_file:
             json.dump(result, json_file)
-
-        return result[symbol]['quote'][quote_type]
+        try:
+            quote = result[symbol]['quote'][quote_type]
+        except:
+            print("There was an error getting quote for {0} {1}".format(symbol, quote_type))
+            quote = None
+        return quote
 
     def get_symbol_stop(self, symbol):
         filter_statuses = ['OPEN', 'PENDING_ACTIVATION', 'WORKING']

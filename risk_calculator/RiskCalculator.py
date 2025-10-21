@@ -362,6 +362,8 @@ class RiskCalculator():
             # This is where common initializers should go:
             break_even_point = None
             remaining_value = 0
+            mark = None
+
             # TODO: this is too simplistic, and forgets that there might be multiple lots at different stops
             # for now, we just grab the first stop (without regard for which order is considered first)
             stopPrice =  self.get_first_stop(acct, pos.symbol)
@@ -369,18 +371,23 @@ class RiskCalculator():
             if(pos.instrument.AssetType == 'EQUITY'):
                 
                 mark = acct.get_symbol_quote(pos.symbol, 'mark')
-                # TODO: live_risk_per_share may give nonsensical values for a short position
-                if pos.LongOrShort == "LONG":
-                    live_risk_per_share = (mark - stopPrice)
-                    # TODO: this doesn't take into account real breakeven point, eg. dividends or premiums reducing real cost
-                    unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity
-                    
-                elif pos.LongOrShort == "SHORT":
-                    live_risk_per_share = max(0, (stopPrice - mark))
-                    unrealized_profit_loss = (pos.averagePrice - mark) * pos.Quantity
-                    
-                live_risk = live_risk_per_share * abs(pos.Quantity)
-                unrealized_profit_loss_pct = unrealized_profit_loss / (pos.averagePrice * pos.Quantity) * 100
+                if mark is None:
+                    mark = 0
+                    live_risk_per_share = 0
+                    unrealized_profit_loss = 0
+                else:
+                    # TODO: live_risk_per_share may give nonsensical values for a short position
+                    if pos.LongOrShort == "LONG":
+                        live_risk_per_share = (mark - stopPrice)
+                        # TODO: this doesn't take into account real breakeven point, eg. dividends or premiums reducing real cost
+                        unrealized_profit_loss = (mark - pos.averagePrice) * pos.Quantity
+                        
+                    elif pos.LongOrShort == "SHORT":
+                        live_risk_per_share = max(0, (stopPrice - mark))
+                        unrealized_profit_loss = (pos.averagePrice - mark) * pos.Quantity
+                        
+                    live_risk = live_risk_per_share * abs(pos.Quantity)
+                    unrealized_profit_loss_pct = unrealized_profit_loss / (pos.averagePrice * pos.Quantity) * 100
 
                 rpt.write('{0}{1}'.format(col_net_liquidity, row), pos.marketValue, accounting_format)
                 
@@ -418,6 +425,7 @@ class RiskCalculator():
                     elif pos.instrument.putCall == Client.Options.ContractType.PUT:
                         live_risk_per_share = opt.strikePrice - stopPrice
                         remaining_value = (mark / pos.averagePrice) * 100
+                
                 break_even_point = acct.get_option_break_even_point(opt, pos.averagePrice)
 
                 live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
@@ -462,8 +470,9 @@ class RiskCalculator():
             rpt.write('{0}{1}'.format(col_live_risk, row), live_risk, accounting_format)
             rpt.write('{0}{1}'.format(col_portfolio_pct, row), live_risk_percentage_of_portfolio, pct_format)
             
-
-            self.profit_targets(acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3)
+            if mark != 0:
+                # quote informaiton is not available, so not able to calculate profit targets based off quote
+                self.profit_targets(acct, workbook, rpt, pos, row, col_profit_target_1, col_profit_target_2, col_profit_target_3)
             row = row+1
                 
 

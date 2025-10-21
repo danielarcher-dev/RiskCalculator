@@ -374,7 +374,7 @@ class RiskCalculator():
             # for now, we just grab the first stop (without regard for which order is considered first)
             stopPrice =  self.get_first_stop(acct, pos.symbol)
 
-            if(pos.instrument.AssetType == 'EQUITY'):
+            if(pos.instrument.AssetType == 'EQUITY' or pos.instrument.AssetType == 'COLLECTIVE_INVESTMENT'):
                 
                 mark = acct.get_symbol_quote(pos.symbol, 'mark')
                 if mark is None:

@@ -8,12 +8,22 @@ class Instrument():
         self.cusip = item['cusip']
         self.symbol = item['symbol']
         
-        try:
-            self.netChange = item['netChange']
-        except:
-            self.netChange = None
-
+        # default values
+        self.netChange = None
         self.underlyingSymbol = None
+        
+        if self.AssetType == "EQUITY":
+            try:
+                self.netChange = item['netChange']
+            except:
+                # sometimes a ticker will be in the order history, but won't be part of the portfolio anymore
+                # and therefore won't have a netChange value
+                self.netChange = None
+        
+        if self.AssetType == "COLLECTIVE_INVESTMENT":
+            self.description = item['description']
+            self.Type = item['type']
+
         if self.AssetType == "OPTION":
             self.description = item['description']
             try:

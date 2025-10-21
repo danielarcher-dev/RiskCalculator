@@ -133,7 +133,7 @@ class AccountsLauncher():
 
         for pos in sorted_by_symbol:
             pos = cast(Position.Position, pos)
-            if pos.instrument.AssetType == 'EQUITY':
+            if(pos.instrument.AssetType == 'EQUITY' or pos.instrument.AssetType == 'COLLECTIVE_INVESTMENT'):
                 self.portfolio_symbols_list.append(pos.symbol)
             elif pos.instrument.AssetType == 'OPTION':
                 self.portfolio_symbols_list.append(pos.instrument.underlyingSymbol)

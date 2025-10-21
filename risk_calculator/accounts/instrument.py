@@ -40,7 +40,7 @@ class Instrument():
         return parse_occ_symbol(self.symbol)
         
 def parse_occ_symbol(symbol):
-    match = re.match(r'([A-Z ]{6})(\d{6})([CP])(\d{8})', symbol)
+    match = re.match(r'([A-Z0-9 ]{6})(\d{6})([CP])(\d{8})', symbol)
     if not match:
         return None
 

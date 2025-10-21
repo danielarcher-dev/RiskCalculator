@@ -18,8 +18,8 @@ class SecuritiesAccount():
 
         self.Positions = [pos.Position(position) for position in self.securitiesAccount['positions']]
 
-        self.CurrentBalances = current_balances.CurrentBalances(self.securitiesAccount['currentBalances'])
-        self.InitialBalances = initial_balances.InitialBalances(self.securitiesAccount['initialBalances'])
+        self.CurrentBalances = current_balances.CurrentBalances(self.securitiesAccount['currentBalances'], self.AccountType)
+        self.InitialBalances = initial_balances.InitialBalances(self.securitiesAccount['initialBalances'], self.AccountType)
 
     def get_symbol_quantity(self, symbol):
         for pos in self.Positions:

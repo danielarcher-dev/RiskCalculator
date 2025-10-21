@@ -13,9 +13,20 @@ class Fundamentals():
         
         # 
     def add_fundamentals(self, dataframe):
+        # for item in dataframe:
+        #     fundamental = Fundamental(item)
+        #     self.Fundamentals.append(fundamental)
         for item in dataframe:
-            fundamental = Fundamental(item)
-            self.Fundamentals.append(fundamental)
+            new_fundamental = Fundamental(item)
+            symbol = new_fundamental.symbol
+
+            # Remove existing fundamental with the same symbol
+            self.Fundamentals = [
+                f for f in self.Fundamentals if f.symbol != symbol
+            ]
+
+            # Add the new one
+            self.Fundamentals.append(new_fundamental)
 
     def calculate_quality_score(self):
         # 1. Load your fundamentals into a DataFrame

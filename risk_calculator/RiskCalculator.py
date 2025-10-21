@@ -164,6 +164,12 @@ class RiskCalculator():
         mycharts = Charts.Charts(acct) # charting also needs acct.client
         # mycharts.export_stocklist(portfolio_symbols, charts_file)
 
+        # GME+ is too young to have chart history, so manually skip it for the time being.
+        try:
+            stock_list.remove("GME+")
+        except:
+            print("GME+ not found")
+        
         mycharts.generate_charts(stock_list)
 
         wbf = self.workbook_formats(workbook)
@@ -427,7 +433,6 @@ class RiskCalculator():
                         remaining_value = (mark / pos.averagePrice) * 100
                 
                 break_even_point = acct.get_option_break_even_point(opt, pos.averagePrice)
-
                 live_risk = live_risk_per_share * abs(pos.Quantity) * opt.multiplier
                 
                 # capital_at_risk_per_share = (opt.strikePrice - stopPrice)

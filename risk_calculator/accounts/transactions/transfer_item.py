@@ -8,7 +8,11 @@ class TransferItem():
         self.symbol = self.instrument['symbol']
         
         self.instrumentId = self.instrument['instrumentId']
-        self.closingPrice = self.instrument['closingPrice']
+        try:
+            # we got this key error on GME WS, brand new warrant issued today, so no closing price yet.
+            self.closingPrice = self.instrument['closingPrice']
+        except:
+            self.closingPrice = None
         self.amount = item['amount']
         self.cost = item['cost']
         if self.assetType == 'CURRENCY':

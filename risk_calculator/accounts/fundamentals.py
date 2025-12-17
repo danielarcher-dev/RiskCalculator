@@ -9,6 +9,7 @@ class Fundamentals():
         self.Fundamentals = []
         self.quality_scores = None
         self.top_30 = None
+        self.top_50 = None
         self.bottom_10 = None
         
         # 
@@ -60,6 +61,7 @@ class Fundamentals():
         self.quality_scores = df
         # 6. Sort and pick top/bottom
         self.top_30   = df.sort_values("quality_score", ascending=False).head(30)
+        self.top_50   = df.sort_values("quality_score", ascending=False).head(50)
         self.bottom_10 = df.sort_values("quality_score", ascending=True).head(10)
 
     def get_fundamental(self, symbol):

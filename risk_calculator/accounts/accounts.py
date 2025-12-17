@@ -33,6 +33,7 @@ class AccountsLauncher():
             self.get_account_symbols()
             self.watchlist = self.get_watchlist()
             self.sp500_list = self.get_sp500_index()
+            self.nasdaq100_list = self.get_nasdaq100_index()
 
             self.perform_fundamental_analysis()
             self.__save__()
@@ -252,10 +253,11 @@ class AccountsLauncher():
         return sorted(set(watchlist))
 
     def get_sp500_index(self):
+        url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         }
-        response = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", headers=headers)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raises HTTPError if status is 403
 
         tables = pd.read_html(response.text)
@@ -264,6 +266,53 @@ class AccountsLauncher():
 
         sp500_list = sp500["Symbol"].tolist()
         return sp500_list
+
+    def get_nasdaq100_index(self):
+        url = "https://api.nasdaq.com/api/quote/list-type/nasdaq100"
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+
+        response = requests.get(url, headers=headers)
+        data = response.json()
+
+        nasdaq100 = [item['symbol'] for item in data['data']['data']['rows']]
+
+        # Extract all fields for each company
+        companies = data['data']['data']['rows']
+        enriched_data = []
+
+        for company in companies:
+            enriched_data.append({
+                "symbol": company.get("symbol"),
+                "companyName": company.get("companyName"),
+                "lastSalePrice": company.get("lastSalePrice"),
+                "netChange": company.get("netChange"),
+                "percentageChange": company.get("percentageChange"),
+                "marketCap": company.get("marketCap"),
+                "country": company.get("country"),
+                "volume": company.get("volume"),
+                "sector": company.get("sector"),
+                "industry": company.get("industry"),
+                "url": company.get("url")
+            })
+            # •  symbol: Ticker symbol
+            # •  companyName: Full name
+            # •  lastSalePrice: Most recent price
+            # •  netChange: Price change
+            # •  percentageChange: % change
+            # •  marketCap: Market capitalization
+            # •  country: Country of listing
+            # •  volume: Trading volume
+            # •  sector: Sector classification
+            # •  industry: Industry classification
+            # •  url: Link to NASDAQ profile page
+        with open(self.nasdaq_file, 'w') as json_file:
+            json.dump(enriched_data, json_file, indent=4)
+
+        return nasdaq100
 
     def chunked(self, lst, size):
         for i in range(0, len(lst), size):
@@ -290,6 +339,8 @@ class AccountsLauncher():
         for item in self.watchlist:
             stocklist.append(item)
         for item in self.sp500_list:
+            stocklist.append(item)
+        for item in self.nasdaq100_list:
             stocklist.append(item)
 
         stocklist = sorted(set(stocklist))

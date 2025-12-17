@@ -35,6 +35,7 @@ class RiskCalculator():
         with(xlsxwriter.Workbook(acct.risk_calculator_output_file) as workbook):
             workbook.set_size(2620, 1820)
             self.write_portfolio(acct, balances, workbook)
+            self.write_order_entry_utility(acct, balances, workbook)
             self.write_portfolio_charts(acct, workbook)
             self.write_watchlist(acct, workbook)
 
@@ -61,7 +62,72 @@ class RiskCalculator():
 
         print("done something")
 
+    def write_order_entry_utility(self, acct, balances, workbook):
+        # these castings aren't mandatory, but makes development easier
+        acct = cast(accounts.AccountsLauncher, acct)
+        sec_acct = cast(sec.SecuritiesAccount, acct.SecuritiesAccount)
 
+        wbf = self.workbook_formats(workbook)
+        accounting_format = wbf['accounting_format']
+        pct_format = wbf['pct_format']
+        bold_format = wbf['bold_format']
+        light_green_format = wbf['light_green_format']
+        light_yellow_format = wbf['light_yellow_format']
+        date_format = wbf['date_format']
+
+
+        rpt = workbook.add_worksheet("order_entry")
+
+        # write portfolio headers
+        rpt.write('A1', "Cash")
+        rpt.write('B1', balances.CashBalance, accounting_format)
+        rpt.set_column("B:B", 10.5) # width not in pixels
+        rpt.write('A2', "Long Equity")
+        rpt.write('B2', balances.LongMarketValue, accounting_format)
+        rpt.write('A3', "Short Equity")
+        rpt.write('B3', balances.ShortMarketValue, accounting_format)
+        rpt.write('A4', "Long Options")
+        rpt.write('B4', balances.LongOptionMarketValue, accounting_format)
+        rpt.write('A5', "Short Options")
+        rpt.write('B5', balances.ShortOptionMarketValue, accounting_format)
+
+        rpt.write('D1', "Max Risk Per Trade")
+        rpt.write('E1', balances.LiquidationValue * .01, accounting_format)
+        rpt.write('D3', "Target Risk Per Trade")
+        rpt.write('E3', "=H3*.01", accounting_format)
+
+        rpt.write('G1', "Net Liquidity")
+        rpt.write('H1', balances.LiquidationValue, accounting_format)
+        rpt.write('G2', "Max Available for Trade")
+        rpt.write('H2', balances.AvailableFunds, accounting_format)
+        rpt.write('G3', "Distance from Liquidation")
+        rpt.write('H3', balances.LiquidationValue - 25000, accounting_format)
+        
+        rpt.write('J1', "Time of Report")
+        rpt.write('K1', datetime.datetime.now(), date_format)
+
+
+        rpt.write('A7', "Entry Price:")
+        rpt.write('A8', "Stop Price:")
+        rpt.write('A10', "Risk Per Share:")
+        rpt.write('B10', "=B7-B8")
+        rpt.write('A11', "Target Risk:")
+        rpt.write('B11', "=$E$3")
+        rpt.write('A13', "Max Shares:")
+        rpt.write('B13', "=ROUNDDOWN(B11/B10,0)")
+        rpt.write('A15', "Target Profit 1")
+        rpt.write('B15', "=B7+B10")
+        rpt.write('A16', "Target Profit 2")
+        rpt.write('B16', "=B7+B10*2")
+        rpt.write('A17', "Target Profit 3")
+        rpt.write('B17', "=B7+B10*3")
+
+        rpt.autofit()
+        # rpt.set_column("B:B", 21) # width not in pixels
+        # rpt.set_column("C:Z", 12) # width not in pixels
+        rpt.set_column("K:K", 17) # width not in pixels
+        rpt.set_zoom(200)
+        
 
     def write_watchlist(self, acct, workbook):
         acct = cast(accounts.AccountsLauncher, acct)
@@ -77,7 +143,7 @@ class RiskCalculator():
 
         # I want to prioritize my charting review by quality of stock
         # I want to view the top 30 and bottom 10
-        for item in acct.Fundamentals.top_30.index:
+        for item in acct.Fundamentals.top_50.index:
             watchlist.append(item)
         for item in acct.Fundamentals.bottom_10.index:
             watchlist.append(item)
@@ -275,6 +341,7 @@ class RiskCalculator():
         bold_format = wbf['bold_format']
         light_green_format = wbf['light_green_format']
         light_yellow_format = wbf['light_yellow_format']
+        date_format = wbf['date_format']
 
 
         rpt = workbook.add_worksheet("portfolio")
@@ -294,8 +361,8 @@ class RiskCalculator():
 
         rpt.write('D1', "Max Risk Per Trade")
         rpt.write('E1', balances.LiquidationValue * .01, accounting_format)
-        # rpt.write('D2', "Max Available for Trade")
-        # rpt.write('E2', balances.AvailableFunds, accounting_format)
+        rpt.write('D3', "Target Risk Per Trade")
+        rpt.write('E3', "=H3*.01", accounting_format)
 
         rpt.write('G1', "Net Liquidity")
         rpt.write('H1', balances.LiquidationValue, accounting_format)
@@ -305,7 +372,7 @@ class RiskCalculator():
         rpt.write('H3', balances.LiquidationValue - 25000, accounting_format)
         
         rpt.write('J1', "Time of Report")
-        rpt.write('K1', datetime.datetime.now())
+        rpt.write('K1', datetime.datetime.now(), date_format)
         
 
         row = 6
@@ -488,6 +555,7 @@ class RiskCalculator():
         rpt.autofit()
         rpt.set_column("B:B", 21) # width not in pixels
         rpt.set_column("C:Z", 12) # width not in pixels
+        rpt.set_column("K:K", 17) # width not in pixels
         rpt.set_zoom(135)
 
     def get_first_stop(self, acct, symbol):
@@ -657,9 +725,9 @@ class RiskCalculator():
     #     self.transactions_file = self.config['AppConfig']['transactions_file'].replace('<date>',str(datetime.date.today()))
     
     def average_daily_volume(self, mycharts, symbol):
-        save_file = './data/price_history/{0}_180_daily_{1}.json'.format(symbol,str(datetime.date.today()))
+        save_file = mycharts.account.price_history_output_file.replace("<symbol>", symbol).replace("<chart>", "180_daily")
         df = mycharts.price_history_to_dataframe(save_file)
-        # df.to_csv(save_file.replace(".json", ".csv"), index=True)
+
         return df.tail(20)
 
     # def daily_volume(self, mycharts, symbol):
